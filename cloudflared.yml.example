@@ -19,7 +19,7 @@ credentials-file: /Users/<your-username>/.cloudflared/<TUNNEL_ID>.json
 
 ingress:
   # Studio + API + output page — all served by Express on port 9876
-  - hostname: countdown.faithfire.com
+  - hostname: countdownstudio.faithfireproduction.com
     service: http://localhost:9876
     originRequest:
       noTLSVerify: true

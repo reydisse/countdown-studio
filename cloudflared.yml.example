@@ -1,0 +1,28 @@
+# Cloudflare Tunnel config — copy to ~/.cloudflared/config.yml
+# and replace the placeholder values.
+#
+# One-time setup:
+#   brew install cloudflared           # macOS; or apt install cloudflared
+#   cloudflared tunnel login           # opens browser, picks your domain
+#   cloudflared tunnel create countdown-studio
+#   # ↑ prints a Tunnel ID — paste it below
+#
+# Then:
+#   cloudflared service install        # run as system service (auto-start)
+#   cloudflared service start
+#
+# Cloudflare dashboard → DNS → add a CNAME:
+#   countdown  CNAME  <TUNNEL_ID>.cfargotunnel.com   (proxied)
+
+tunnel: <TUNNEL_ID>
+credentials-file: /Users/<your-username>/.cloudflared/<TUNNEL_ID>.json
+
+ingress:
+  # Studio + API + output page — all served by Express on port 9876
+  - hostname: countdown.faithfire.com
+    service: http://localhost:9876
+    originRequest:
+      noTLSVerify: true
+
+  # Catch-all (required by cloudflared)
+  - service: http_status:404

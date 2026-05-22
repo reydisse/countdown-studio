@@ -1,0 +1,25 @@
+{
+  "name": "countdown-studio",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev":            "turbo run dev --filter=@countdown/web --filter=@countdown/server",
+    "dev:electron":   "turbo run dev --filter=@countdown/web --filter=@countdown/electron",
+    "build":          "turbo run build",
+    "build:web":      "turbo run build --filter=@countdown/web",
+    "build:electron": "turbo run build --filter=@countdown/electron",
+    "start":          "node packages/server/src/index.js",
+    "deploy":         "pnpm build:web && node packages/server/src/index.js",
+    "lint":           "turbo run lint",
+    "clean":          "turbo run clean"
+  },
+  "devDependencies": {
+    "turbo": "^2.3.3",
+    "typescript": "^5.7.0"
+  },
+  "engines": {
+    "node": ">=20",
+    "pnpm": ">=9"
+  },
+  "packageManager": "pnpm@9.15.0"
+}

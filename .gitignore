@@ -1,0 +1,46 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build outputs
+apps/web/dist/
+apps/electron/release/
+apps/electron/out/
+packages/*/dist/
+
+# Data & media (local to each machine)
+data/
+logs/
+
+# Electron builder
+apps/electron/release/
+apps/electron/dist/
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# Cloudflare Tunnel credentials (contain private keys)
+*.json
+!package.json
+!tsconfig*.json
+!turbo.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/settings.json
+.idea/
+*.swp
+*.swo
+
+# Turbo cache
+.turbo/
+
+# SQLite (local databases)
+*.db
+*.db-shm
+*.db-wal

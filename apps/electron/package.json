@@ -1,0 +1,39 @@
+{
+  "name": "@countdown/electron",
+  "version": "0.1.0",
+  "private": true,
+  "main": "src/main.js",
+  "scripts": {
+    "dev":   "electron .",
+    "build": "electron-builder",
+    "lint":  "echo 'no lint step'"
+  },
+  "dependencies": {
+    "@countdown/server": "workspace:*",
+    "@countdown/db": "workspace:*",
+    "@countdown/media": "workspace:*",
+    "@countdown/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "electron": "^34.0.0",
+    "electron-builder": "^25.1.8",
+    "typescript": "^5.7.0"
+  },
+  "build": {
+    "appId": "com.countdownstudio.app",
+    "productName": "Countdown Studio",
+    "directories": {
+      "output": "release"
+    },
+    "mac": {
+      "target": "dmg",
+      "category": "public.app-category.video"
+    },
+    "win": {
+      "target": "nsis"
+    },
+    "linux": {
+      "target": "AppImage"
+    }
+  }
+}

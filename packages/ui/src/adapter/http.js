@@ -1,0 +1,64 @@
+// Shared fetch-based implementation used by both adapters.
+//
+// In production the web app is served FROM the Express server (same origin),
+// so all API calls use relative paths (SERVER_URL = '').
+// In dev, Vite runs on :5173 and the server on :9876 — use absolute URL.
+// VITE_SERVER_URL can override both (e.g. for staging envs).
+const SERVER_URL =
+  (typeof import.meta !== 'undefined' && import.meta.env?.VITE_SERVER_URL) ||
+  (typeof import.meta !== 'undefined' && import.meta.env?.DEV
+    ? 'http://localhost:9876'
+    : '');
+
+export const getServerUrl = () =>
+  SERVER_URL || `${location.protocol}//${location.host}`;
+
+async function request(path, options = {}) {
+  const { body, headers = {}, ...rest } = options;
+  const isFormData = body instanceof FormData;
+
+  const res = await fetch(`${SERVER_URL}${path}`, {
+    headers: isFormData ? headers : { 'Content-Type': 'application/json', ...headers },
+    body: body && !isFormData ? JSON.stringify(body) : body,
+    ...rest,
+  });
+
+  if (!res.ok) {
+    const payload = await res.json().catch(() => ({}));
+    const err = new Error(payload.error ?? res.statusText);
+    err.status = res.status;
+    throw err;
+  }
+
+  return res.status === 204 ? null : res.json();
+}
+
+// Projects
+export const getProjects = () => request('/api/projects');
+export const getProject  = (id) => request(`/api/projects/${id}`);
+export const saveProject  = (data) =>
+  data.id
+    ? request(`/api/projects/${data.id}`, { method: 'PATCH', body: data })
+    : request('/api/projects',            { method: 'POST',  body: data });
+export const deleteProject = (id) => request(`/api/projects/${id}`, { method: 'DELETE' });
+
+// Assets
+export const getAssets   = (type) =>
+  request(`/api/assets${type ? `?type=${encodeURIComponent(type)}` : ''}`);
+export const deleteAsset = (id) => request(`/api/assets/${id}`, { method: 'DELETE' });
+
+export async function uploadAsset(file) {
+  const formData = new FormData();
+  formData.append('file', file);
+  return request('/api/assets', { method: 'POST', body: formData });
+}
+
+// Cues
+export const getCues    = (projectId) =>
+  request(`/api/projects/${projectId}/cues`);
+export const createCue  = (projectId, data) =>
+  request(`/api/projects/${projectId}/cues`, { method: 'POST',   body: data });
+export const updateCue  = (projectId, cueId, data) =>
+  request(`/api/projects/${projectId}/cues/${cueId}`, { method: 'PUT',    body: data });
+export const deleteCue  = (projectId, cueId) =>
+  request(`/api/projects/${projectId}/cues/${cueId}`, { method: 'DELETE' });

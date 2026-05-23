@@ -1,17 +1,11 @@
 // Shared fetch-based implementation used by both adapters.
 //
-// In production the web app is served FROM the Express server (same origin),
-// so all API calls use relative paths (SERVER_URL = '').
-// In dev, Vite runs on :5173 and the server on :9876 — use absolute URL.
-// VITE_SERVER_URL can override both (e.g. for staging envs).
-const SERVER_URL =
-  (typeof import.meta !== 'undefined' && import.meta.env?.VITE_SERVER_URL) ||
-  (typeof import.meta !== 'undefined' && import.meta.env?.DEV
-    ? 'http://localhost:9876'
-    : '');
+// All API calls use root-relative paths (/api/...) so they work on any host.
+// In dev, Vite proxies /api → localhost:9876 (see apps/web/vite.config.ts).
+// VITE_SERVER_URL can force an explicit base for unusual setups.
+const SERVER_URL = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_SERVER_URL) || '';
 
-export const getServerUrl = () =>
-  SERVER_URL || `${location.protocol}//${location.host}`;
+export const getServerUrl = () => `${location.protocol}//${location.host}`;
 
 async function request(path, options = {}) {
   const { body, headers = {}, ...rest } = options;

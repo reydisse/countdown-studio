@@ -73,13 +73,17 @@ async function processUpload({ originalname, mimetype, path: tmpPath, size }) {
       await generateImageThumb(destPath, thumbAbsPath);
       thumbnailPath = thumbAbsPath;
       thumbnailUrl  = getUrl(`thumbs/${thumbFilename}`);
-    } catch (_) {}
+    } catch (err) {
+      console.warn('[media] image thumbnail failed:', err.message);
+    }
   } else if (mimetype.startsWith('video/')) {
     try {
       await generateVideoThumb(destPath, thumbAbsPath);
       thumbnailPath = thumbAbsPath;
       thumbnailUrl  = getUrl(`thumbs/${thumbFilename}`);
-    } catch (_) {}
+    } catch (err) {
+      console.warn('[media] video thumbnail failed (is ffmpeg installed?):', err.message);
+    }
     duration = await getVideoDuration(destPath);
   }
 

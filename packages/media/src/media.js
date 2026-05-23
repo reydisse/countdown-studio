@@ -4,12 +4,10 @@ const path = require('path');
 const os = require('os');
 const fs = require('fs');
 
-const PORT = 9876;
-// In production set SERVER_BASE_URL=https://countdown.yourdomain.com
-// so asset URLs stored in the DB match the public host.
-const MEDIA_BASE_URL = process.env.SERVER_BASE_URL
-  ? `${process.env.SERVER_BASE_URL}/media`
-  : `http://localhost:${PORT}/media`;
+// Media URLs are stored as root-relative paths (/media/...) so they resolve
+// against whatever domain the app is hosted on without any env var required.
+// In dev Vite proxies /media → localhost:9876 (see apps/web/vite.config.ts).
+const PORT = 9876; // kept for reference, no longer used in URLs
 
 function resolveMediaDir() {
   // Electron passes this env var so both dev and packaged builds write to the same place
@@ -34,7 +32,7 @@ function ensureDirs() {
 }
 
 function getUrl(relPath) {
-  return `${MEDIA_BASE_URL}/${relPath}`;
+  return `/media/${relPath}`;
 }
 
 module.exports = { resolveMediaDir, resolveDataDir, ensureDirs, getUrl };

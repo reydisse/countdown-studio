@@ -11,6 +11,13 @@ export default defineConfig({
   },
   server: {
     port: 5173,
+    proxy: {
+      // In dev the API and media live on the Express server (:9876).
+      // Vite proxies these paths so relative URLs work the same as in production.
+      '/api':    { target: 'http://localhost:9876', changeOrigin: true },
+      '/media':  { target: 'http://localhost:9876', changeOrigin: true },
+      '/output': { target: 'http://localhost:9876', changeOrigin: true },
+    },
   },
   css: {
     // File-path form: postcss-load-config resolves plugins relative to this

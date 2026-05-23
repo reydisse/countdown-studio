@@ -90,6 +90,16 @@ export const useSettingsStore = create((set, get) => ({
     _zoomDuration: duration ?? 1500,
   })),
 
+  // Called when settings arrive from another studio window via WS.
+  // Applies only the known settings fields — ignores the resolved URL fields
+  // (bgAssetUrl, slideshowUrls, etc.) that AppShell adds for the output page.
+  applyFromServer: (payload) => {
+    const known = Object.fromEntries(
+      Object.entries(payload).filter(([k]) => k in DEFAULTS && !k.startsWith('_'))
+    );
+    if (Object.keys(known).length) set(known);
+  },
+
   loadFromProject: (project) => {
     if (!project.settings) return;
     set({ ...DEFAULTS, ...project.settings });

@@ -23,4 +23,13 @@ function send(socket, type, payload = {}) {
   }
 }
 
-module.exports = { init, broadcast, send };
+// Like broadcast() but skips the originating socket — prevents echo loops.
+function broadcastExcept(origin, type, payload = {}) {
+  if (!_wss) return;
+  const msg = JSON.stringify({ type, payload });
+  for (const client of _wss.clients) {
+    if (client !== origin && client.readyState === WS_OPEN) client.send(msg);
+  }
+}
+
+module.exports = { init, broadcast, send, broadcastExcept };

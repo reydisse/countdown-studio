@@ -1,8 +1,9 @@
 import { useEffect, useRef } from 'react';
 import { _setSend, send } from '../wsClient.js';
-import { useTimerStore } from '../stores/timerStore.js';
-import { useCueStore }   from '../stores/cueStore.js';
-import { useMediaStore } from '../stores/mediaStore.js';
+import { useTimerStore }    from '../stores/timerStore.js';
+import { useCueStore }      from '../stores/cueStore.js';
+import { useMediaStore }    from '../stores/mediaStore.js';
+import { useSettingsStore } from '../stores/settingsStore.js';
 
 // In dev or Electron: ws://localhost:9876
 // In production (behind Cloudflare Tunnel / HTTPS): wss://<same host>
@@ -17,13 +18,13 @@ const WS_URL     = resolveWsUrl();
 const BASE_DELAY = 1_000;
 const MAX_DELAY  = 30_000;
 
-// Server event string constants (inlined to avoid CJS interop issues at build time)
 const EV = {
-  TIMER_TICK:    'timer:tick',
-  TIMER_STATE:   'timer:state',
-  CUE_FIRED:     'cue:fired',
-  ASSET_ADDED:   'asset:added',
-  ASSET_REMOVED: 'asset:removed',
+  TIMER_TICK:       'timer:tick',
+  TIMER_STATE:      'timer:state',
+  CUE_FIRED:        'cue:fired',
+  ASSET_ADDED:      'asset:added',
+  ASSET_REMOVED:    'asset:removed',
+  SETTINGS_CHANGED: 'settings:changed',
 };
 
 // ── Singleton send ─────────────────────────────────────────────────────────
@@ -76,6 +77,13 @@ export function useWebSocket() {
             break;
           case EV.ASSET_REMOVED:
             useMediaStore.getState()._remove(payload.id);
+            break;
+          case EV.SETTINGS_CHANGED:
+            // Another studio window or the server pushed new settings.
+            // applyFromServer() only touches known store fields — it does NOT
+            // trigger another outgoing sync because AppShell's sync compares
+            // hashes and skips when the payload matches what we last sent.
+            useSettingsStore.getState().applyFromServer(payload);
             break;
         }
       };

@@ -1,18 +1,20 @@
 'use strict';
 
 const { Router } = require('express');
-const broadcast  = require('../broadcast');
 const state      = require('../settingsState');
 
 const router = Router();
 
+// GET — initial state fetch (used by output page on connect)
 router.get('/', (_req, res) => {
   res.json(state.get());
 });
 
+// POST — kept for backward compat but does NOT broadcast.
+// Real-time sync now goes through the 'settings:update' WS message
+// (see server/index.js) which uses broadcastExcept to avoid echo loops.
 router.post('/', (req, res) => {
   state.merge(req.body);
-  broadcast.broadcast('settings:changed', state.get());
   res.json({ ok: true });
 });
 

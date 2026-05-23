@@ -59,7 +59,8 @@ cueEngine.init(broadcast);
 timerEngine.setCueEngine(cueEngine);
 
 // ── WS connection handler ────────────────────────────────────────────────────
-const settingsState = require('./settingsState');
+const settingsState  = require('./settingsState');
+const { broadcastExcept } = require('./broadcast');
 
 wss.on('connection', (socket) => {
   broadcast.send(socket, SERVER_EVENTS.TIMER_STATE, timerEngine.getState());
@@ -93,6 +94,13 @@ wss.on('connection', (socket) => {
         break;
       case CLIENT_EVENTS.FIRE_CUE:
         if (payload.cue) broadcast.broadcast(SERVER_EVENTS.CUE_FIRED, { cue: payload.cue });
+        break;
+
+      // Studio pushes its full settings state via WS so all other clients
+      // (other studio windows, output page) stay in sync in real time.
+      case 'settings:update':
+        settingsState.merge(payload);
+        broadcastExcept(socket, 'settings:changed', settingsState.get());
         break;
     }
   });

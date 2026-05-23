@@ -35,16 +35,13 @@ app.get('/output', (_req, res) => {
   res.sendFile(path.join(__dirname, 'output.html'));
 });
 
-// ── Production: serve the built React studio app ──────────────────────────────
-// Build it first: pnpm build:web
-// Then the studio is available at / alongside the API.
-const webDist = path.join(__dirname, '../../apps/web/dist');
-if (fs.existsSync(webDist)) {
-  app.use(express.static(webDist));
-  app.get('*', (_req, res) => {
-    res.sendFile(path.join(webDist, 'index.html'));
-  });
-}
+// ── Serve built frontend (must come AFTER all /api/* and /media/* routes) ─────
+// Build with: pnpm build:web  →  apps/web/dist/
+const distPath = path.resolve(__dirname, '../../../apps/web/dist');
+app.use(express.static(distPath));
+app.get('*', (_req, res) => {
+  res.sendFile(path.join(distPath, 'index.html'));
+});
 
 // ── HTTP + WS server ─────────────────────────────────────────────────────────
 const server = http.createServer(app);

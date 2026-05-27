@@ -4,29 +4,45 @@ import { send }            from '../../wsClient.js';
 import { useSettingsStore } from '../../stores/settingsStore.js';
 import { useMediaStore }    from '../../stores/mediaStore.js';
 import { useTimerStore }    from '../../stores/timerStore.js';
+import { useRoomStore }     from '../../stores/roomStore.js';
 import { PreviewCanvas }   from '../canvas/PreviewCanvas.jsx';
 import { Sidebar }         from '../sidebar/Sidebar.jsx';
 import { PlanView }        from '../plan/PlanView.jsx';
 import { ModeBar }         from './ModeBar.jsx';
 import { Footer }          from './Footer.jsx';
+import { RoomGate }        from '../RoomGate.jsx';
 
 export function AppShell() {
-  useWebSocket(); // mount once — establishes the singleton WS connection
+  const [ready, setReady] = useState(false);
+  const room              = useRoomStore(s => s.room);
+
+  // Restore session from sessionStorage on first mount
+  useEffect(() => {
+    useRoomStore.getState().initialize().finally(() => setReady(true));
+  }, []);
+
+  if (!ready) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-surface-base">
+        <div className="w-6 h-6 rounded-full border-2 border-accent border-t-transparent animate-spin" />
+      </div>
+    );
+  }
+
+  if (!room) return <RoomGate />;
+
+  return <MainApp />;
+}
+
+function MainApp() {
+  useWebSocket();
 
   const [mode, setMode] = useState('design');
   const slideshowRef    = useRef(null);
 
-  // Seed media store so assets are available immediately in all panels
   useEffect(() => { useMediaStore.getState().fetchAll(); }, []);
 
   // ── Push settings to server via WS so all clients stay in sync ────────────
-  // Uses 'settings:update' (WS) instead of HTTP POST so the server can use
-  // broadcastExcept — other studio windows and the output page receive
-  // 'settings:changed' but the sender is excluded, preventing echo loops.
-  //
-  // Hash tracking stops ping-pong: when we receive settings from another
-  // client, applyFromServer() updates our store. Our own debounce fires but
-  // the hash matches lastHash so we skip the outgoing send.
   useEffect(() => {
     let timer    = null;
     let lastHash = '';
@@ -53,7 +69,7 @@ export function AppShell() {
       timer = setTimeout(() => {
         const payload = buildPayload();
         const hash    = JSON.stringify(payload);
-        if (hash === lastHash) return; // nothing changed (or echo from server)
+        if (hash === lastHash) return;
         lastHash = hash;
         send('settings:update', payload);
       }, 300);
@@ -65,7 +81,7 @@ export function AppShell() {
     return () => { clearTimeout(timer); unsubS(); unsubM(); };
   }, []);
 
-  // ── End-behaviour: react when timer naturally reaches 00:00 ───────────────
+  // ── End-behaviour ─────────────────────────────────────────────────────────
   useEffect(() => {
     return useTimerStore.subscribe((curr, prev) => {
       if (prev.status !== 'running' || curr.status !== 'stopped' || curr.remaining !== 0) return;
@@ -87,18 +103,15 @@ export function AppShell() {
       <main className="flex flex-1 overflow-hidden">
         {mode === 'design' ? (
           <>
-            {/* Canvas area */}
             <div className="flex-1 flex items-center justify-center p-6 bg-surface-base overflow-hidden">
               <PreviewCanvas
                 slideshowRef={slideshowRef}
                 className="max-h-full shadow-2xl"
               />
             </div>
-
             <Sidebar />
           </>
         ) : (
-          /* Plan mode: mini preview + timeline + cue editor */
           <>
             <PlanView slideshowRef={slideshowRef} />
             <Sidebar />

@@ -22,3 +22,17 @@ export const {
   updateCue,
   deleteCue,
 } = adapter;
+
+// Room-scoped APIs come directly from http.js — shared between web and Electron.
+export {
+  createRoom,
+  getRoom,
+  getRoomAssets,
+  uploadRoomAsset,
+  deleteRoomAsset,
+  getRoomCues,
+  createRoomCue,
+  updateRoomCue,
+  deleteRoomCue,
+  saveRoomSettings,
+} from './http.js';

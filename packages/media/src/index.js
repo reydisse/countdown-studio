@@ -1,6 +1,6 @@
 'use strict';
 
 const { resolveMediaDir, resolveDataDir, ensureDirs, getUrl } = require('./media');
-const { processUpload } = require('./upload');
+const { processUpload, deleteMedia } = require('./upload');
 
-module.exports = { resolveMediaDir, resolveDataDir, ensureDirs, getUrl, processUpload };
+module.exports = { resolveMediaDir, resolveDataDir, ensureDirs, getUrl, processUpload, deleteMedia };

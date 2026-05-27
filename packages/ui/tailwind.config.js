@@ -13,21 +13,21 @@ module.exports = {
     extend: {
       colors: {
         surface: {
-          base:     '#181614',
-          raised:   '#211e1b',
-          elevated: '#2c2825',
-          overlay:  '#3a3530',
+          base:     '#000000',
+          raised:   '#0a0a0a',
+          elevated: '#111111',
+          overlay:  '#1a1a1a',
         },
         text: {
-          primary:   '#f0ede8',
-          secondary: '#b8b2a8',
-          muted:     '#8a8278',
-          disabled:  '#5a5550',
+          primary:   '#ffffff',
+          secondary: '#a3a3a3',
+          muted:     '#737373',
+          disabled:  '#525252',
         },
         accent: {
           DEFAULT: '#e8a838',
           hover:   '#d4952a',
-          dim:     '#4a3510',
+          dim:     '#2a1f00',
         },
         status: {
           live:   '#34d48a',
@@ -36,9 +36,9 @@ module.exports = {
           info:   '#38bdf8',
         },
         border: {
-          subtle:  '#2c2825',
-          default: '#3a3530',
-          strong:  '#4a4540',
+          subtle:  '#1a1a1a',
+          default: '#2a2a2a',
+          strong:  '#3f3f3f',
         },
       },
       fontFamily: {

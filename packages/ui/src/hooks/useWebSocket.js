@@ -4,9 +4,8 @@ import { useTimerStore }    from '../stores/timerStore.js';
 import { useCueStore }      from '../stores/cueStore.js';
 import { useMediaStore }    from '../stores/mediaStore.js';
 import { useSettingsStore } from '../stores/settingsStore.js';
+import { useRoomStore }     from '../stores/roomStore.js';
 
-// In dev or Electron: ws://localhost:9876
-// In production (behind Cloudflare Tunnel / HTTPS): wss://<same host>
 function resolveWsUrl() {
   if (typeof window === 'undefined') return 'ws://localhost:9876';
   if (window.__ELECTRON__)           return 'ws://localhost:9876';
@@ -25,19 +24,17 @@ const EV = {
   ASSET_ADDED:      'asset:added',
   ASSET_REMOVED:    'asset:removed',
   SETTINGS_CHANGED: 'settings:changed',
+  ROOM_JOINED:      'room:joined',
+  ROOM_NOT_FOUND:   'room:not_found',
 };
 
-// ── Singleton send ─────────────────────────────────────────────────────────
-// Re-exported so components can import { send } from here for convenience,
-// but wsClient.js is the canonical source.
 export { send };
 
-// ── Hook — mount once at the app root ─────────────────────────────────────
 export function useWebSocket() {
   const socketRef   = useRef(null);
   const backoffRef  = useRef(BASE_DELAY);
   const aliveRef    = useRef(true);
-  const timeroutRef = useRef(null);
+  const timeoutRef  = useRef(null);
 
   useEffect(() => {
     aliveRef.current = true;
@@ -48,7 +45,6 @@ export function useWebSocket() {
       const ws = new WebSocket(WS_URL);
       socketRef.current = ws;
 
-      // Register this socket as the active send target
       _setSend((type, payload = {}) => {
         if (ws.readyState === WebSocket.OPEN) {
           ws.send(JSON.stringify({ type, payload }));
@@ -56,7 +52,12 @@ export function useWebSocket() {
       });
 
       ws.onopen = () => {
-        backoffRef.current = BASE_DELAY; // reset on successful connect
+        backoffRef.current = BASE_DELAY;
+        // Immediately join the current room
+        const code = useRoomStore.getState().getRoomCode();
+        if (code) {
+          ws.send(JSON.stringify({ type: 'room:join', payload: { code } }));
+        }
       };
 
       ws.onmessage = ({ data }) => {
@@ -65,6 +66,15 @@ export function useWebSocket() {
         const { type, payload } = msg;
 
         switch (type) {
+          case EV.ROOM_JOINED:
+            useRoomStore.getState().setJoined(true);
+            useTimerStore.getState()._tick(payload.timer);
+            useSettingsStore.getState().applyFromServer(payload.settings ?? {});
+            useCueStore.getState().setCues(payload.cues ?? []);
+            break;
+          case EV.ROOM_NOT_FOUND:
+            useRoomStore.getState().leaveRoom();
+            break;
           case EV.TIMER_TICK:
           case EV.TIMER_STATE:
             useTimerStore.getState()._tick(payload);
@@ -79,10 +89,6 @@ export function useWebSocket() {
             useMediaStore.getState()._remove(payload.id);
             break;
           case EV.SETTINGS_CHANGED:
-            // Another studio window or the server pushed new settings.
-            // applyFromServer() only touches known store fields — it does NOT
-            // trigger another outgoing sync because AppShell's sync compares
-            // hashes and skips when the payload matches what we last sent.
             useSettingsStore.getState().applyFromServer(payload);
             break;
         }
@@ -90,14 +96,10 @@ export function useWebSocket() {
 
       ws.onclose = () => {
         if (!aliveRef.current) return;
-
-        // No-op send during reconnect window
         _setSend(() => {});
-
         const delay = backoffRef.current;
-        // Exponential backoff: double each attempt, cap at MAX_DELAY
         backoffRef.current = Math.min(delay * 2, MAX_DELAY);
-        timeroutRef.current = setTimeout(connect, delay);
+        timeoutRef.current = setTimeout(connect, delay);
       };
     }
 
@@ -105,9 +107,9 @@ export function useWebSocket() {
 
     return () => {
       aliveRef.current = false;
-      clearTimeout(timeroutRef.current);
-      _setSend(() => {}); // silence any in-flight sends after unmount
+      clearTimeout(timeoutRef.current);
+      _setSend(() => {});
       socketRef.current?.close();
     };
-  }, []); // runs once — getState() calls inside handlers avoid stale-closure issues
+  }, []);
 }

@@ -1,6 +1,6 @@
 'use strict';
 
-const { SERVER_EVENTS } = require('@countdown/shared');
+const { SERVER_EVENTS } = require('@showstack/shared');
 
 let _broadcast   = null;
 let _cueEngine   = null;

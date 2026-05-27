@@ -1,9 +1,9 @@
 'use strict';
 
-// WebSocket.OPEN === 1 (spec constant — stable across ws versions)
 const WS_OPEN = 1;
 
 let _wss = null;
+const _roomSubs = new Map(); // code → Set<WebSocket>
 
 function init(wss) {
   _wss = wss;
@@ -23,7 +23,6 @@ function send(socket, type, payload = {}) {
   }
 }
 
-// Like broadcast() but skips the originating socket — prevents echo loops.
 function broadcastExcept(origin, type, payload = {}) {
   if (!_wss) return;
   const msg = JSON.stringify({ type, payload });
@@ -32,4 +31,51 @@ function broadcastExcept(origin, type, payload = {}) {
   }
 }
 
-module.exports = { init, broadcast, send, broadcastExcept };
+// ── Room-scoped helpers ───────────────────────────────────────────────────────
+
+function addToRoom(code, socket) {
+  if (!_roomSubs.has(code)) _roomSubs.set(code, new Set());
+  _roomSubs.get(code).add(socket);
+}
+
+function removeFromRoom(code, socket) {
+  const subs = _roomSubs.get(code);
+  if (!subs) return 0;
+  subs.delete(socket);
+  if (subs.size === 0) _roomSubs.delete(code);
+  return _roomSubs.get(code)?.size ?? 0;
+}
+
+function getRoomSize(code) {
+  return _roomSubs.get(code)?.size ?? 0;
+}
+
+function broadcastToRoom(code, type, payload = {}) {
+  const subs = _roomSubs.get(code);
+  if (!subs) return;
+  const msg = JSON.stringify({ type, payload });
+  for (const ws of subs) {
+    if (ws.readyState === WS_OPEN) ws.send(msg);
+  }
+}
+
+function broadcastToRoomExcept(code, origin, type, payload = {}) {
+  const subs = _roomSubs.get(code);
+  if (!subs) return;
+  const msg = JSON.stringify({ type, payload });
+  for (const ws of subs) {
+    if (ws !== origin && ws.readyState === WS_OPEN) ws.send(msg);
+  }
+}
+
+module.exports = {
+  init,
+  broadcast,
+  send,
+  broadcastExcept,
+  addToRoom,
+  removeFromRoom,
+  getRoomSize,
+  broadcastToRoom,
+  broadcastToRoomExcept,
+};

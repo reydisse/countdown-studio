@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { send } from '../wsClient.js';
 
-// Client constants inlined to avoid @countdown/shared CJS import at module init.
+// Client constants inlined to avoid @showstack/shared CJS import at module init.
 const EV = {
   PLAY:  'timer:play',
   PAUSE: 'timer:pause',

@@ -8,7 +8,7 @@
 module.exports = {
   apps: [
     {
-      name: "countdown-studio",
+      name: "showstack",
       script: "./packages/server/src/index.js",
 
       // ── Environment ────────────────────────────────────────────────────────

@@ -3,9 +3,9 @@
 const { Router } = require('express');
 const multer = require('multer');
 const os = require('os');
-const { assets } = require('@countdown/db');
-const { processUpload } = require('@countdown/media');
-const { SERVER_EVENTS } = require('@countdown/shared');
+const { assets } = require('@showstack/db');
+const { processUpload } = require('@showstack/media');
+const { SERVER_EVENTS } = require('@showstack/shared');
 const broadcast = require('../broadcast');
 
 const router = Router();

@@ -1,5 +1,6 @@
 import { create } from 'zustand';
-import { saveProject } from '../adapter/index.js';
+import { saveProject, saveRoomSettings } from '../adapter/index.js';
+import { useRoomStore } from './roomStore.js';
 
 const DEFAULTS = {
   // ── Background ───────────────────────────────────────────────────────────
@@ -113,6 +114,18 @@ export const useSettingsStore = create((set, get) => ({
       )
     );
     await saveProject({ id: projectId, settings });
+  },
+
+  saveToRoom: async () => {
+    const code = useRoomStore.getState().getRoomCode();
+    if (!code) return;
+    const state = get();
+    const settings = Object.fromEntries(
+      Object.entries(state).filter(([k]) =>
+        !RUNTIME_KEYS.has(k) && typeof state[k] !== 'function'
+      )
+    );
+    await saveRoomSettings(code, settings);
   },
 
   reset: () => set({ ...DEFAULTS }),

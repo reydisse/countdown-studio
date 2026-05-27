@@ -1,5 +1,5 @@
 {
-  "name": "@countdown/server",
+  "name": "@showstack/server",
   "version": "0.1.0",
   "private": true,
   "main": "./src/index.js",
@@ -10,13 +10,15 @@
     "lint": "echo 'no lint step'"
   },
   "dependencies": {
-    "@countdown/db":     "workspace:*",
-    "@countdown/media":  "workspace:*",
-    "@countdown/shared": "workspace:*",
-    "cors":              "^2.8.5",
-    "express":           "^4.21.2",
-    "multer":            "^1.4.5-lts.1",
-    "ws":                "^8.18.0"
+    "@showstack/db":     "workspace:*",
+    "@showstack/media":  "workspace:*",
+    "@showstack/shared": "workspace:*",
+    "cors":               "^2.8.5",
+    "express":            "^4.21.2",
+    "express-rate-limit": "^7.5.0",
+    "morgan":             "^1.10.0",
+    "multer":             "^1.4.5-lts.1",
+    "ws":                 "^8.18.0"
   },
   "devDependencies": {
     "@types/cors":    "^2.8.17",

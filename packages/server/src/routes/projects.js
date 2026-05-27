@@ -1,8 +1,8 @@
 'use strict';
 
 const { Router } = require('express');
-const { projects, cues } = require('@countdown/db');
-const { SERVER_EVENTS } = require('@countdown/shared');
+const { projects, cues } = require('@showstack/db');
+const { SERVER_EVENTS } = require('@showstack/shared');
 const broadcast = require('../broadcast');
 
 const router = Router();

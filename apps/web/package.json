@@ -1,5 +1,5 @@
 {
-  "name": "@countdown/web",
+  "name": "@showstack/web",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -9,8 +9,8 @@
     "lint": "tsc --noEmit"
   },
   "dependencies": {
-    "@countdown/ui": "workspace:*",
-    "@countdown/shared": "workspace:*",
+    "@showstack/ui": "workspace:*",
+    "@showstack/shared": "workspace:*",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },

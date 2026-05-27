@@ -28,6 +28,7 @@ export { MediaPanel }       from './sidebar/MediaPanel.jsx';
 export { AppShell }         from './layout/AppShell.jsx';
 export { ModeBar }          from './layout/ModeBar.jsx';
 export { Footer }           from './layout/Footer.jsx';
+export { RoomGate }         from './RoomGate.jsx';
 
 // Plan
 export { PlanView }         from './plan/PlanView.jsx';

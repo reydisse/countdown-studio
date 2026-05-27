@@ -1,0 +1,31 @@
+version: "3.9"
+
+services:
+  showstack:
+    build: .
+    container_name: showstack
+    restart: always
+    ports:
+      - "9876:9876"
+    volumes:
+      - showstack_db:/app/data/db
+      - showstack_media:/app/data/media
+      - ./logs:/app/logs
+    environment:
+      - NODE_ENV=production
+      - PORT=9876
+      - R2_ACCOUNT_ID=${R2_ACCOUNT_ID:-}
+      - R2_ACCESS_KEY_ID=${R2_ACCESS_KEY_ID:-}
+      - R2_SECRET_ACCESS_KEY=${R2_SECRET_ACCESS_KEY:-}
+      - R2_BUCKET_NAME=${R2_BUCKET_NAME:-}
+      - R2_PUBLIC_URL=${R2_PUBLIC_URL:-}
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:9876/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  showstack_db:
+  showstack_media:

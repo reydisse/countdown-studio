@@ -56,3 +56,32 @@ export const updateCue  = (projectId, cueId, data) =>
   request(`/api/projects/${projectId}/cues/${cueId}`, { method: 'PUT',    body: data });
 export const deleteCue  = (projectId, cueId) =>
   request(`/api/projects/${projectId}/cues/${cueId}`, { method: 'DELETE' });
+
+// Rooms
+export const createRoom = (data) => request('/api/rooms', { method: 'POST', body: data });
+export const getRoom    = (code) => request(`/api/rooms/${code}`);
+
+// Room-scoped assets
+export const getRoomAssets  = (code, type) =>
+  request(`/api/rooms/${code}/assets${type ? `?type=${encodeURIComponent(type)}` : ''}`);
+export const deleteRoomAsset = (code, id) =>
+  request(`/api/rooms/${code}/assets/${id}`, { method: 'DELETE' });
+export async function uploadRoomAsset(code, file) {
+  const formData = new FormData();
+  formData.append('file', file);
+  return request(`/api/rooms/${code}/assets`, { method: 'POST', body: formData });
+}
+
+// Room-scoped cues
+export const getRoomCues   = (code) =>
+  request(`/api/rooms/${code}/cues`);
+export const createRoomCue = (code, data) =>
+  request(`/api/rooms/${code}/cues`, { method: 'POST', body: data });
+export const updateRoomCue = (code, cueId, data) =>
+  request(`/api/rooms/${code}/cues/${cueId}`, { method: 'PUT', body: data });
+export const deleteRoomCue = (code, cueId) =>
+  request(`/api/rooms/${code}/cues/${cueId}`, { method: 'DELETE' });
+
+// Room settings persistence
+export const saveRoomSettings = (code, settings) =>
+  request(`/api/rooms/${code}`, { method: 'PATCH', body: { settings } });

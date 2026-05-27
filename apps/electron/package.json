@@ -1,5 +1,5 @@
 {
-  "name": "@countdown/electron",
+  "name": "@showstack/electron",
   "version": "0.1.0",
   "private": true,
   "main": "src/main.js",
@@ -9,10 +9,10 @@
     "lint":  "echo 'no lint step'"
   },
   "dependencies": {
-    "@countdown/server": "workspace:*",
-    "@countdown/db": "workspace:*",
-    "@countdown/media": "workspace:*",
-    "@countdown/shared": "workspace:*"
+    "@showstack/server": "workspace:*",
+    "@showstack/db": "workspace:*",
+    "@showstack/media": "workspace:*",
+    "@showstack/shared": "workspace:*"
   },
   "devDependencies": {
     "electron": "^34.0.0",

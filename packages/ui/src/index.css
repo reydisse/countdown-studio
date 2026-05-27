@@ -13,8 +13,8 @@ html, body, #root {
 }
 
 body {
-  background: #181614;
-  color: #f0ede8;
+  background: #000000;
+  color: #ffffff;
   font-family: "DM Sans", sans-serif;
   -webkit-font-smoothing: antialiased;
 }
@@ -27,7 +27,7 @@ input[type="range"]::-webkit-slider-thumb {
   border-radius: 50%;
   background: #e8a838;
   cursor: pointer;
-  border: 2px solid #181614;
+  border: 2px solid #000000;
   box-shadow: 0 0 0 1px #e8a838;
 }
 input[type="range"]::-moz-range-thumb {
@@ -36,7 +36,7 @@ input[type="range"]::-moz-range-thumb {
   border-radius: 50%;
   background: #e8a838;
   cursor: pointer;
-  border: 2px solid #181614;
+  border: 2px solid #000000;
 }
 
 /* ── Radix / shadcn keyframes ─────────────────────────────────────── */
@@ -67,5 +67,5 @@ input[type="range"]::-moz-range-thumb {
 /* ── Scrollbar ────────────────────────────────────────────────────── */
 ::-webkit-scrollbar       { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #3a3530; border-radius: 2px; }
-::-webkit-scrollbar-thumb:hover { background: #4a4540; }
+::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: #3f3f3f; }

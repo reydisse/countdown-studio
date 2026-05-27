@@ -1,0 +1,26 @@
+# Cloudflare Tunnel config
+# Place this file at: ~/.cloudflared/config.yml on your server
+#
+# One-time setup:
+#   cloudflared tunnel login
+#   cloudflared tunnel create showstack
+#   # Paste the printed Tunnel ID below
+#
+# Then install and start as a service:
+#   cloudflared service install
+#   cloudflared service start
+#
+# Cloudflare dashboard → DNS → add a CNAME:
+#   countdownstudio  CNAME  <TUNNEL_ID>.cfargotunnel.com   (proxied ✓)
+
+tunnel: <TUNNEL_ID>
+credentials-file: /root/.cloudflared/<TUNNEL_ID>.json
+
+ingress:
+  - hostname: countdownstudio.faithfireproduction.com
+    service: http://localhost:9876
+    originRequest:
+      noTLSVerify: true
+
+  # Catch-all (required by cloudflared)
+  - service: http_status:404

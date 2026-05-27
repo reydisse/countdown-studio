@@ -1,7 +1,7 @@
 'use strict';
 
-const { SERVER_EVENTS } = require('@countdown/shared');
-const { cues } = require('@countdown/db');
+const { SERVER_EVENTS } = require('@showstack/shared');
+const { cues } = require('@showstack/db');
 
 let _broadcast   = null;
 let _activeCues  = [];

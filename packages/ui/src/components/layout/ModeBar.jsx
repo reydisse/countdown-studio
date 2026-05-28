@@ -7,17 +7,6 @@ const STATUS_CONFIG = {
   stopped: { label: 'READY',  dot: 'bg-text-disabled', pill: 'bg-surface-overlay text-text-muted', pulse: false },
 };
 
-function BrandLogo({ size = 22 }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-      <rect width="40" height="40" rx="10" fill="#0a0a0a" />
-      <rect width="40" height="40" rx="10" stroke="#2a2a2a" strokeWidth="1" />
-      <rect x="7" y="10" width="26" height="5" rx="2.5" fill="#e8a838" />
-      <rect x="7" y="18" width="26" height="4" rx="2" fill="white" fillOpacity="0.6" />
-      <rect x="7" y="26" width="18" height="4" rx="2" fill="white" fillOpacity="0.25" />
-    </svg>
-  );
-}
 
 function RoomBadge({ code }) {
   function copyShare() {
@@ -64,15 +53,7 @@ export function ModeBar({ mode, onModeChange }) {
             <path d="M14 8H6" />
           </svg>
         </button>
-        <BrandLogo size={22} />
-        <div className="flex flex-col leading-none">
-          <span className="text-[11px] font-semibold text-text-primary tracking-wide">
-            ShowStack
-          </span>
-          <span className="text-[9px] text-text-muted tracking-widest uppercase">
-            by Faithfire
-          </span>
-        </div>
+        <img src="/showstack-logo.svg" alt="ShowStack" style={{ height: 22, width: 'auto' }} />
       </div>
 
       {/* ── Mode tabs ──────────────────────────────────────────────────────── */}

@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 120" width="400" height="120">
+  <defs>
+    <linearGradient id="amberGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#f5c842;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#e8a838;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="stackGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#f5c842;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#c47d10;stop-opacity:1" />
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="400" height="120" fill="#181614" rx="12"/>
+
+  <!-- Stack icon: 3 stacked bars with perspective -->
+  <!-- Bottom bar - darkest -->
+  <rect x="18" y="78" width="68" height="14" rx="3" fill="#8a6010" opacity="0.7"/>
+  <!-- Middle bar -->
+  <rect x="14" y="60" width="72" height="14" rx="3" fill="#c47d10" opacity="0.85"/>
+  <!-- Top bar - brightest, amber -->
+  <rect x="10" y="42" width="76" height="14" rx="3" fill="url(#amberGrad)" filter="url(#glow)"/>
+
+  <!-- Signal/broadcast dot on top bar -->
+  <circle cx="72" cy="49" r="4" fill="#181614"/>
+  <circle cx="72" cy="49" r="2.5" fill="#f5c842"/>
+
+  <!-- Vertical divider -->
+  <line x1="108" y1="28" x2="108" y2="92" stroke="#3a3530" stroke-width="1.5"/>
+
+  <!-- SHOW text -->
+  <text
+    x="124"
+    y="72"
+    font-family="'Georgia', 'Times New Roman', serif"
+    font-size="42"
+    font-weight="700"
+    font-style="italic"
+    fill="#f0ede8"
+    letter-spacing="-1"
+  >SHOW</text>
+
+  <!-- STACK text - amber, different weight -->
+  <text
+    x="236"
+    y="72"
+    font-family="'Georgia', 'Times New Roman', serif"
+    font-size="42"
+    font-weight="400"
+    font-style="italic"
+    fill="url(#amberGrad)"
+    letter-spacing="-1"
+  >STACK</text>
+
+  <!-- Tagline -->
+  <text
+    x="124"
+    y="90"
+    font-family="'Courier New', monospace"
+    font-size="9"
+    fill="#8a8278"
+    letter-spacing="3"
+  >BROADCAST PRODUCTION SUITE</text>
+
+  <!-- Top-right version dot -->
+  <circle cx="382" cy="22" r="4" fill="#e8a838" opacity="0.6"/>
+</svg>

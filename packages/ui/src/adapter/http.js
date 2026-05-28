@@ -1,11 +1,17 @@
 // Shared fetch-based implementation used by both adapters.
-//
-// All API calls use root-relative paths (/api/...) so they work on any host.
-// In dev, Vite proxies /api → localhost:9876 (see apps/web/vite.config.ts).
-// VITE_SERVER_URL can force an explicit base for unusual setups.
-const SERVER_URL = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_SERVER_URL) || '';
+// VITE_API_URL points to the CF Worker in production (set in .env.production).
+// Falls back to root-relative paths for local Express dev.
+const SERVER_URL = (typeof import.meta !== 'undefined' && (import.meta.env?.VITE_API_URL || import.meta.env?.VITE_SERVER_URL)) || '';
 
-export const getServerUrl = () => `${location.protocol}//${location.host}`;
+export const getServerUrl = () => SERVER_URL || `${location.protocol}//${location.host}`;
+export const getWsUrl = () => {
+  const api = SERVER_URL
+  if (!api) {
+    const proto = location.protocol === 'https:' ? 'wss:' : 'ws:'
+    return `${proto}//${location.host}`
+  }
+  return api.replace('https://', 'wss://').replace('http://', 'ws://')
+};
 
 async function request(path, options = {}) {
   const { body, headers = {}, ...rest } = options;

@@ -1,173 +1,176 @@
-'use strict';
+'use strict'
 
-const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
-const { spawn } = require('child_process');
-const path = require('path');
-const os   = require('os');
-const fs   = require('fs');
+const { app, BrowserWindow, ipcMain, dialog, shell, Tray, Menu, nativeImage } = require('electron')
+const { autoUpdater } = require('electron-updater')
+const path = require('path')
+const fs   = require('fs')
+const { isDev, CF_API_URL, CF_WS_URL } = require('./config')
 
-const PORT      = 9876;
-const MEDIA_DIR = path.join(os.homedir(), 'ShowPilot', 'media');
-const IS_DEV    = !app.isPackaged;
+let mainWindow          = null
+let outputWindow        = null
+let teleprompterWindow  = null
+let tray                = null
 
-// ── Paths ─────────────────────────────────────────────────────────────────────
-function serverEntry() {
-  if (IS_DEV) {
-    // apps/electron/src/main.js → ../../../packages/server/src/index.js
-    return path.join(__dirname, '..', '..', '..', 'packages', 'server', 'src', 'index.js');
-  }
-  return path.join(process.resourcesPath, 'server', 'index.js');
-}
+// ── Window creation ───────────────────────────────────────────────────────────
 
-// ── Server child process ──────────────────────────────────────────────────────
-let serverProc = null;
-
-function startServer() {
-  return new Promise((resolve, reject) => {
-    serverProc = spawn(process.execPath, [serverEntry()], {
-      env: {
-        ...process.env,
-        NODE_ENV:            IS_DEV ? 'development' : 'production',
-        SHOWPILOT_MEDIA_DIR: MEDIA_DIR,
-        PORT:                String(PORT),
-      },
-      stdio: ['ignore', 'pipe', 'pipe'],
-    });
-
-    serverProc.stdout.on('data', (chunk) => {
-      if (chunk.toString().includes('READY')) resolve();
-    });
-
-    serverProc.stderr.on('data', (chunk) => {
-      console.error('[server]', chunk.toString().trimEnd());
-    });
-
-    serverProc.on('error', reject);
-    serverProc.on('exit', (code) => {
-      if (code !== 0 && code !== null) console.error(`[server] exited with code ${code}`);
-    });
-
-    setTimeout(() => reject(new Error('Server startup timed out')), 20_000);
-  });
-}
-
-// ── Window ────────────────────────────────────────────────────────────────────
-let mainWindow = null;
-
-async function loadWithRetry(win, url, attempts = 25, delay = 400) {
-  for (let i = 0; i < attempts; i++) {
-    try {
-      await fetch(url, { signal: AbortSignal.timeout(800) });
-      win.loadURL(url);
-      return;
-    } catch {
-      await new Promise(r => setTimeout(r, delay));
-    }
-  }
-  win.loadURL(url); // final attempt regardless
-}
-
-function createWindow() {
+function createMainWindow() {
   mainWindow = new BrowserWindow({
-    width:  1440,
-    height: 900,
-    minWidth:  1024,
-    minHeight: 600,
-    titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'default',
+    width: 1440, height: 900, minWidth: 1200, minHeight: 700,
+    title: 'ShowStack',
     backgroundColor: '#181614',
-    show: false,
     webPreferences: {
-      preload:          path.join(__dirname, 'preload.js'),
+      preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
-      nodeIntegration:  false,
-      sandbox:          false,
+      nodeIntegration: false,
+      webSecurity: true,
     },
-  });
+  })
 
-  const appUrl = IS_DEV
-    ? 'http://localhost:5173'
-    : `http://localhost:${PORT}`;
-
-  loadWithRetry(mainWindow, appUrl);
-
-  mainWindow.once('ready-to-show', () => mainWindow.show());
-
-  if (IS_DEV) {
-    mainWindow.webContents.openDevTools({ mode: 'detach' });
+  if (isDev) {
+    mainWindow.loadURL('http://localhost:5173')
+    mainWindow.webContents.openDevTools({ mode: 'detach' })
+  } else {
+    mainWindow.loadFile(path.join(process.resourcesPath, 'web', 'index.html'))
   }
+
+  mainWindow.on('closed', () => {
+    mainWindow = null
+    outputWindow?.close()
+    teleprompterWindow?.close()
+    app.quit()
+  })
+}
+
+function createOutputWindow(roomCode) {
+  outputWindow = new BrowserWindow({
+    width: 1920, height: 1080, frame: false, alwaysOnTop: true,
+    title: 'ShowStack Output', backgroundColor: '#000000',
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
+      contextIsolation: true, nodeIntegration: false,
+    },
+  })
+
+  const query = roomCode ? `?room=${roomCode}` : ''
+  if (isDev) {
+    outputWindow.loadURL(`http://localhost:9876/output${query}`)
+  } else {
+    outputWindow.loadURL(`${CF_API_URL}/output${query}`)
+  }
+
+  outputWindow.on('closed', () => { outputWindow = null })
+}
+
+function createTeleprompterReaderWindow(roomCode) {
+  teleprompterWindow = new BrowserWindow({
+    width: 1920, height: 1080, frame: false,
+    title: 'ShowStack Teleprompter', backgroundColor: '#000000',
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
+      contextIsolation: true, nodeIntegration: false,
+    },
+  })
+
+  if (isDev) {
+    const path_ = roomCode ? `/room/${roomCode}/read` : ''
+    teleprompterWindow.loadURL(`http://localhost:5174/teleprompter${path_}`)
+  } else {
+    teleprompterWindow.loadFile(
+      path.join(process.resourcesPath, 'teleprompter', 'index.html'),
+      roomCode ? { hash: `room/${roomCode}/read` } : {}
+    )
+  }
+
+  teleprompterWindow.on('closed', () => { teleprompterWindow = null })
+}
+
+// ── System tray ───────────────────────────────────────────────────────────────
+
+function createTray() {
+  const iconPath = path.join(__dirname, '..', 'assets', 'tray-icon.png')
+  const icon = fs.existsSync(iconPath)
+    ? nativeImage.createFromPath(iconPath)
+    : nativeImage.createEmpty()
+
+  tray = new Tray(icon)
+  tray.setToolTip('ShowStack')
+  tray.setContextMenu(Menu.buildFromTemplate([
+    { label: 'Open ShowStack',           click: () => mainWindow ? mainWindow.show() : createMainWindow() },
+    { type: 'separator' },
+    { label: 'Open Output Window',       click: () => createOutputWindow(null) },
+    { label: 'Open Teleprompter Reader', click: () => createTeleprompterReaderWindow(null) },
+    { type: 'separator' },
+    { label: 'Quit', click: () => app.quit() },
+  ]))
+  tray.on('double-click', () => mainWindow ? mainWindow.show() : createMainWindow())
 }
 
 // ── IPC handlers ──────────────────────────────────────────────────────────────
-const MIME_MAP = {
-  '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png':  'image/png',
-  '.gif': 'image/gif',  '.webp': 'image/webp', '.svg':  'image/svg+xml',
-  '.mp4': 'video/mp4',  '.mov':  'video/quicktime', '.webm': 'video/webm',
-  '.avi': 'video/x-msvideo',
-  '.mp3': 'audio/mpeg', '.wav':  'audio/wav',  '.ogg':  'audio/ogg',
-  '.m4a': 'audio/mp4',  '.aac':  'audio/aac',  '.flac': 'audio/flac',
-};
 
-function parseFilters(accept = '') {
-  if (!accept) return [];
-  const exts = [];
-  for (const part of accept.split(',').map(s => s.trim())) {
-    if (part === 'image/*') exts.push('jpg','jpeg','png','gif','webp','svg');
-    else if (part === 'video/*') exts.push('mp4','mov','webm','avi');
-    else if (part === 'audio/*') exts.push('mp3','wav','ogg','m4a','aac','flac');
-    else if (part.includes('/')) exts.push(part.split('/')[1].replace('jpeg','jpg'));
-  }
-  return exts.length ? [{ name: 'Media Files', extensions: exts }] : [];
-}
+ipcMain.handle('get-config', () => ({
+  apiUrl: isDev ? 'http://localhost:9876' : CF_API_URL,
+  wsUrl:  isDev ? 'ws://localhost:9876'   : CF_WS_URL,
+  isDev,
+  version: app.getVersion(),
+}))
 
-ipcMain.handle('dialog:open-file', async (_event, options = {}) => {
-  const props = ['openFile'];
-  if (options.multiple) props.push('multiSelections');
-
+ipcMain.handle('open-file-picker', async (_e, opts = {}) => {
+  const props = opts.multiple ? ['openFile', 'multiSelections'] : ['openFile']
   const result = await dialog.showOpenDialog(mainWindow, {
     properties: props,
-    filters:    parseFilters(options.accept),
-  });
+    filters: opts.filters ?? [{ name: 'All Files', extensions: ['*'] }],
+  })
+  return result.canceled ? [] : result.filePaths
+})
 
-  return { paths: result.filePaths, canceled: result.canceled };
-});
+ipcMain.handle('read-file-base64', async (_e, filePath) => {
+  try {
+    const buffer   = fs.readFileSync(filePath)
+    const ext      = path.extname(filePath).toLowerCase()
+    const mimeMap  = {
+      '.jpg':'image/jpeg','.jpeg':'image/jpeg','.png':'image/png','.webp':'image/webp','.gif':'image/gif',
+      '.mp4':'video/mp4','.mov':'video/quicktime','.webm':'video/webm',
+      '.mp3':'audio/mpeg','.wav':'audio/wav','.aac':'audio/aac',
+    }
+    return { data: buffer.toString('base64'), mimeType: mimeMap[ext] ?? 'application/octet-stream', name: path.basename(filePath), size: buffer.length }
+  } catch (e) { return { error: String(e) } }
+})
 
-ipcMain.handle('media:upload', async (_event, filePath) => {
-  const buffer   = fs.readFileSync(filePath);
-  const ext      = path.extname(filePath).toLowerCase();
-  const mimeType = MIME_MAP[ext] ?? 'application/octet-stream';
-  const filename = path.basename(filePath);
+ipcMain.handle('open-output-window', (_e, roomCode) => {
+  if (outputWindow && !outputWindow.isDestroyed()) { outputWindow.focus(); return }
+  createOutputWindow(roomCode)
+})
 
-  const formData = new FormData();
-  formData.append('file', new Blob([buffer], { type: mimeType }), filename);
+ipcMain.handle('open-teleprompter-reader', (_e, roomCode) => {
+  if (teleprompterWindow && !teleprompterWindow.isDestroyed()) { teleprompterWindow.focus(); return }
+  createTeleprompterReaderWindow(roomCode)
+})
 
-  const res = await fetch(`http://localhost:${PORT}/api/assets`, {
-    method: 'POST',
-    body:   formData,
-  });
-  return res.json();
-});
+ipcMain.handle('open-external-url', (_e, url) => { shell.openExternal(url) })
+ipcMain.handle('set-fullscreen',    (_e, val) => { mainWindow?.setFullScreen(val) })
+ipcMain.handle('minimize-to-tray',  ()        => { mainWindow?.hide() })
+ipcMain.on('install-update',        ()        => { autoUpdater.quitAndInstall() })
+
+// ── Auto updater ──────────────────────────────────────────────────────────────
+
+function setupAutoUpdater() {
+  if (isDev) return
+  autoUpdater.checkForUpdatesAndNotify()
+  autoUpdater.on('update-available',  () => mainWindow?.webContents.send('update-available'))
+  autoUpdater.on('update-downloaded', () => mainWindow?.webContents.send('update-downloaded'))
+  setInterval(() => autoUpdater.checkForUpdatesAndNotify(), 4 * 60 * 60 * 1000)
+}
 
 // ── App lifecycle ─────────────────────────────────────────────────────────────
-app.whenReady().then(async () => {
-  try {
-    await startServer();
-  } catch (err) {
-    console.error('Failed to start server:', err.message);
-  }
-  createWindow();
 
+app.whenReady().then(() => {
+  createMainWindow()
+  createTray()
+  setupAutoUpdater()
   app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow();
-  });
-});
+    if (BrowserWindow.getAllWindows().length === 0) createMainWindow()
+  })
+})
 
-app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') app.quit();
-});
-
-app.on('will-quit', () => {
-  if (serverProc) {
-    serverProc.kill('SIGTERM');
-    serverProc = null;
-  }
-});
+app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit() })
+app.on('before-quit',        () => { tray?.destroy() })

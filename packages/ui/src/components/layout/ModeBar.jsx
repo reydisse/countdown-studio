@@ -30,7 +30,7 @@ function RoomBadge({ code }) {
   );
 }
 
-export function ModeBar({ mode, onModeChange }) {
+export function ModeBar({ mode, onModeChange, rightSlot }) {
   const status    = useTimerStore(s => s.status);
   const code      = useRoomStore(s => s.room?.code);
   const leaveRoom = useRoomStore(s => s.leaveRoom);
@@ -76,8 +76,9 @@ export function ModeBar({ mode, onModeChange }) {
         ))}
       </div>
 
-      {/* ── Right section: room code + status ──────────────────────────────── */}
+      {/* ── Right section: room code + status + optional slot ─────────────── */}
       <div className="flex items-center gap-2">
+        {rightSlot}
         {code && <RoomBadge code={code} />}
         <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold tracking-widest ${cfg.pill}`}>
           <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot} ${cfg.pulse ? 'animate-pulse' : ''}`} />

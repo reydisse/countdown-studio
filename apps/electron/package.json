@@ -4,36 +4,56 @@
   "private": true,
   "main": "src/main.js",
   "scripts": {
-    "dev":   "electron .",
-    "build": "electron-builder",
-    "lint":  "echo 'no lint step'"
+    "dev":         "electron .",
+    "build":       "electron-builder",
+    "build:win":   "electron-builder --win",
+    "build:mac":   "electron-builder --mac",
+    "build:linux": "electron-builder --linux"
   },
   "dependencies": {
-    "@showstack/server": "workspace:*",
-    "@showstack/db": "workspace:*",
-    "@showstack/media": "workspace:*",
-    "@showstack/shared": "workspace:*"
+    "electron-updater": "^6.3.0"
   },
   "devDependencies": {
     "electron": "^34.0.0",
-    "electron-builder": "^25.1.8",
-    "typescript": "^5.7.0"
+    "electron-builder": "^25.0.0"
   },
   "build": {
-    "appId": "com.countdownstudio.app",
-    "productName": "Countdown Studio",
+    "appId": "com.showstack.desktop",
+    "productName": "ShowStack",
+    "copyright": "Copyright 2025 ShowStack",
     "directories": {
-      "output": "release"
+      "output": "dist-electron"
+    },
+    "files": [
+      "src/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "../../apps/web/dist",
+        "to": "web"
+      },
+      {
+        "from": "../../apps/teleprompter/dist",
+        "to": "teleprompter"
+      }
+    ],
+    "win": {
+      "target": ["nsis"],
+      "icon": "assets/icon.ico"
     },
     "mac": {
-      "target": "dmg",
-      "category": "public.app-category.video"
-    },
-    "win": {
-      "target": "nsis"
+      "target": ["dmg"],
+      "icon": "assets/icon.icns",
+      "category": "public.app-category.productivity"
     },
     "linux": {
-      "target": "AppImage"
+      "target": ["AppImage"],
+      "icon": "assets/icon.png"
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "reydisse",
+      "repo": "countdown-studio"
     }
   }
 }

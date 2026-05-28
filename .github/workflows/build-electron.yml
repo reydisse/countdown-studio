@@ -1,0 +1,66 @@
+name: Build Electron App
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Build UI
+        run: |
+          pnpm --filter @showstack/web build
+          pnpm --filter @showstack/teleprompter-app build
+        env:
+          VITE_API_URL: https://api.YOURDOMAIN.com
+          VITE_WS_URL: wss://api.YOURDOMAIN.com
+
+      - name: Build Electron (Windows)
+        if: matrix.os == 'windows-latest'
+        run: pnpm --filter @showstack/electron build:win
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CF_API_URL: https://api.YOURDOMAIN.com
+          CF_WS_URL: wss://api.YOURDOMAIN.com
+
+      - name: Build Electron (macOS)
+        if: matrix.os == 'macos-latest'
+        run: pnpm --filter @showstack/electron build:mac
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CF_API_URL: https://api.YOURDOMAIN.com
+          CF_WS_URL: wss://api.YOURDOMAIN.com
+
+      - name: Build Electron (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: pnpm --filter @showstack/electron build:linux
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CF_API_URL: https://api.YOURDOMAIN.com
+          CF_WS_URL: wss://api.YOURDOMAIN.com
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: showstack-${{ matrix.os }}
+          path: apps/electron/dist-electron/

@@ -5,15 +5,17 @@ import { useCueStore }      from '../stores/cueStore.js';
 import { useMediaStore }    from '../stores/mediaStore.js';
 import { useSettingsStore } from '../stores/settingsStore.js';
 import { useRoomStore }     from '../stores/roomStore.js';
+import { getWsUrl }         from '../adapter/http.js';
 
-function resolveWsUrl() {
-  if (typeof window === 'undefined') return 'ws://localhost:9876';
-  if (window.__ELECTRON__)           return 'ws://localhost:9876';
-  if (location.hostname === 'localhost') return `ws://localhost:9876`;
-  const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
-  return `${proto}//${location.host}`;
+function buildWsUrl(roomCode) {
+  // Electron: get URL from IPC config asynchronously (handled by getElectronWsUrl)
+  if (typeof window !== 'undefined' && window.__ELECTRON_API__) return null; // resolved async
+  const base = getWsUrl();
+  // CF Worker: WebSocket URL includes ?room= to route to the correct Durable Object
+  if (roomCode && !base.includes('localhost')) return `${base}/ws?room=${roomCode}`;
+  return base;
 }
-const WS_URL     = resolveWsUrl();
+
 const BASE_DELAY = 1_000;
 const MAX_DELAY  = 30_000;
 
@@ -39,10 +41,23 @@ export function useWebSocket() {
   useEffect(() => {
     aliveRef.current = true;
 
-    function connect() {
+    async function connect() {
       if (!aliveRef.current) return;
 
-      const ws = new WebSocket(WS_URL);
+      const code = useRoomStore.getState().getRoomCode();
+      let wsUrl = buildWsUrl(code);
+
+      // Electron: resolve URL via IPC
+      if (!wsUrl && typeof window !== 'undefined' && window.__ELECTRON_API__) {
+        try {
+          const cfg = await window.__ELECTRON_API__.getConfig();
+          wsUrl = code ? `${cfg.wsUrl}/ws?room=${code}` : cfg.wsUrl;
+        } catch {
+          wsUrl = 'ws://localhost:9876';
+        }
+      }
+
+      const ws = new WebSocket(wsUrl ?? 'ws://localhost:9876');
       socketRef.current = ws;
 
       _setSend((type, payload = {}) => {
@@ -99,7 +114,7 @@ export function useWebSocket() {
         _setSend(() => {});
         const delay = backoffRef.current;
         backoffRef.current = Math.min(delay * 2, MAX_DELAY);
-        timeoutRef.current = setTimeout(connect, delay);
+        timeoutRef.current = setTimeout(() => connect(), delay);
       };
     }
 

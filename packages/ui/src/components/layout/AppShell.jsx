@@ -11,6 +11,7 @@ import { PlanView }        from '../plan/PlanView.jsx';
 import { ModeBar }         from './ModeBar.jsx';
 import { Footer }          from './Footer.jsx';
 import { RoomGate }        from '../RoomGate.jsx';
+import { UpdateBanner }    from '../shared/UpdateBanner.jsx';
 
 export function AppShell() {
   const [ready, setReady] = useState(false);
@@ -96,9 +97,30 @@ function MainApp() {
     });
   }, []);
 
+  const isElectron = typeof window !== 'undefined' && !!window.__ELECTRON__
+  const room = useRoomStore(s => s.room)
+
   return (
     <div className="flex flex-col h-screen bg-surface-base text-text-primary overflow-hidden font-sans">
-      <ModeBar mode={mode} onModeChange={setMode} />
+      <UpdateBanner />
+      <ModeBar mode={mode} onModeChange={setMode} rightSlot={isElectron && (
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => window.__ELECTRON_API__?.openOutputWindow(room?.code)}
+            title="Open output window"
+            className="px-2 py-0.5 rounded text-[10px] text-text-muted hover:text-text-primary hover:bg-surface-elevated border border-transparent hover:border-border-subtle transition-colors"
+          >
+            Output ↗
+          </button>
+          <button
+            onClick={() => window.__ELECTRON_API__?.openTeleprompterReader(room?.code)}
+            title="Open teleprompter reader"
+            className="px-2 py-0.5 rounded text-[10px] text-text-muted hover:text-text-primary hover:bg-surface-elevated border border-transparent hover:border-border-subtle transition-colors"
+          >
+            Teleprompter ↗
+          </button>
+        </div>
+      )} />
 
       <main className="flex flex-1 overflow-hidden">
         {mode === 'design' ? (

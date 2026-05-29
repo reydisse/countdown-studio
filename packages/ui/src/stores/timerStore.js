@@ -16,12 +16,23 @@ export const useTimerStore = create(() => ({
   total:     0,
 
   // ── Internal — called by useWebSocket on TIMER_TICK / TIMER_STATE ──────────
-  _tick: (payload) => useTimerStore.setState(payload),
+  _tick: ({ remaining = 0, totalSeconds = 0, running = false }) => {
+    useTimerStore.setState({
+      remaining,
+      total: totalSeconds,
+      status: running ? 'running' : remaining > 0 ? 'paused' : 'stopped',
+    });
+  },
 
   // ── Controls — all routed through WS; server is the source of truth ────────
   play:    () => send(EV.PLAY),
   pause:   () => send(EV.PAUSE),
   stop:    () => send(EV.STOP),
   reset:   () => send(EV.RESET),
-  setTime: (seconds) => send(EV.SET, { seconds }),
+  setTime: (seconds) => {
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = seconds % 60;
+    send(EV.SET, { h, m, s });
+  },
 }));

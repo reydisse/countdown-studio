@@ -38,4 +38,17 @@ app.get('/ws', async (c) => {
 
 app.get('/join/:code', (c) => c.redirect(`/?room=${c.req.param('code')}`))
 
+// R2 media proxy — serves uploaded assets directly from the Worker
+app.get('/media/*', async (c) => {
+  const key = c.req.path.slice('/media/'.length)
+  if (!key) return c.text('Not found', 404)
+  const obj = await c.env.MEDIA.get(key)
+  if (!obj) return c.text('Not found', 404)
+  const headers = new Headers()
+  if (obj.httpMetadata?.contentType) headers.set('Content-Type', obj.httpMetadata.contentType)
+  headers.set('Cache-Control', 'public, max-age=31536000')
+  headers.set('Access-Control-Allow-Origin', '*')
+  return new Response(obj.body, { headers })
+})
+
 export default app

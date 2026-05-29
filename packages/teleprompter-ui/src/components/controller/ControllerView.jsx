@@ -22,7 +22,7 @@ export function ControllerView() {
   useEffect(() => { usePrompterStore.getState().loadScripts(); }, []);
 
   function openReader() {
-    const url = `${location.origin}/teleprompter/room/${room?.code}/read`;
+    const url = `${location.origin}/room/${room?.code}/read`;
     window.open(url, '_blank', 'width=1920,height=1080');
   }
 

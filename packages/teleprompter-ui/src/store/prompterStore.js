@@ -117,6 +117,7 @@ export const usePrompterStore = create((set, get) => ({
     if (res.ok) {
       const updated = await res.json();
       set({ scripts: scripts.map(s => s.id === updated.id ? updated : s) });
+      send('prompter:script', { scriptId: activeScriptId, content });
     }
   },
 

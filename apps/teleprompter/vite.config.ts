@@ -4,7 +4,7 @@ import path from 'path';
 
 export default defineConfig({
   plugins: [react()],
-  base: '/teleprompter/',
+  base: '/',
   resolve: {
     alias: {
       '@showstack/teleprompter-ui': path.resolve(__dirname, '../../packages/teleprompter-ui/src'),

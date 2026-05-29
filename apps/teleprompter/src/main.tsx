@@ -6,7 +6,7 @@ import '@showstack/teleprompter-ui/index.css';
 
 createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <BrowserRouter basename="/teleprompter">
+    <BrowserRouter>
       <App />
     </BrowserRouter>
   </React.StrictMode>

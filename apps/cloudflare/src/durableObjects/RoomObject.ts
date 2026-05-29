@@ -10,6 +10,7 @@ export class RoomObject implements DurableObject {
   private roomCode: string | null = null
   private cues: RoomCue[] = []
   private currentScript: { scriptId: string; content: string } | null = null
+  private displaySettings: Record<string, unknown> | null = null
   private heartbeatTimer: ReturnType<typeof setInterval> | null = null
   private state: DurableObjectState
   private env: Bindings
@@ -112,7 +113,7 @@ export class RoomObject implements DurableObject {
         this.registerWithRegistry(code)
         ws.send(JSON.stringify({
           type: 'room:joined',
-          payload: { timer: this.timer.getState(), prompter: this.prompter.getState(), cues: this.cues, script: this.currentScript },
+          payload: { timer: this.timer.getState(), prompter: this.prompter.getState(), cues: this.cues, script: this.currentScript, display: this.displaySettings },
         }))
         break
       }
@@ -133,6 +134,11 @@ export class RoomObject implements DurableObject {
       case 'prompter:settings':
         if (payload.totalHeight !== undefined) await this.prompter.setTotalHeight(Number(payload.totalHeight))
         break
+      case 'prompter:display': {
+        this.displaySettings = payload as Record<string, unknown>
+        this.broadcast('prompter:display', payload)
+        break
+      }
       case 'prompter:script': {
         const { scriptId, content } = payload as { scriptId: string; content: string }
         this.currentScript = { scriptId, content }

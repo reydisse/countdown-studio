@@ -152,7 +152,10 @@ export const usePrompterStore = create((set, get) => ({
 
   updateDisplay: (patch) => {
     set(patch);
-    send('prompter:settings', { ...get(), ...patch });
+    const { fontSize, lineWidth, fontFamily, textColor, bgColor,
+            isMirrored, isFlippedVertical, showFocusLine, focusLinePosition } = { ...get(), ...patch };
+    send('prompter:display', { fontSize, lineWidth, fontFamily, textColor, bgColor,
+                               isMirrored, isFlippedVertical, showFocusLine, focusLinePosition });
   },
 
   reportHeight: (totalHeight) => {

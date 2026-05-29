@@ -1,5 +1,7 @@
 import { create } from 'zustand';
 
+const API = import.meta.env.VITE_API_URL || '';
+
 let _send = () => {};
 export function _setSend(fn) { _send = fn; }
 export function send(type, payload = {}) { _send(type, payload); }
@@ -56,7 +58,7 @@ export const usePrompterStore = create((set, get) => ({
     const code = sessionStorage.getItem('showstack_prompter_room');
     if (!code) return;
     try {
-      const res = await fetch(`/api/rooms/${code}`);
+      const res = await fetch(`${API}/api/rooms/${code}`);
       if (res.ok) set({ room: await res.json() });
       else sessionStorage.removeItem('showstack_prompter_room');
     } catch {
@@ -67,13 +69,13 @@ export const usePrompterStore = create((set, get) => ({
   loadScripts: async () => {
     const code = get().room?.code;
     if (!code) return;
-    const res = await fetch(`/api/rooms/${code}/scripts`);
+    const res = await fetch(`${API}/api/rooms/${code}/scripts`);
     if (!res.ok) return;
     let scripts = await res.json();
 
     // Auto-create a default script so the editor always has somewhere to save
     if (scripts.length === 0) {
-      const created = await fetch(`/api/rooms/${code}/scripts`, {
+      const created = await fetch(`${API}/api/rooms/${code}/scripts`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: 'Script 1', content: '' }),
@@ -99,7 +101,7 @@ export const usePrompterStore = create((set, get) => ({
       await get().loadScripts();
       if (!get().activeScriptId) return;
     }
-    const res = await fetch(`/api/rooms/${room.code}/scripts/${activeScriptId}`, {
+    const res = await fetch(`${API}/api/rooms/${room.code}/scripts/${activeScriptId}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ content }),
@@ -113,7 +115,7 @@ export const usePrompterStore = create((set, get) => ({
   createScript: async (name) => {
     const code = get().room?.code;
     if (!code || !name) return;
-    const res = await fetch(`/api/rooms/${code}/scripts`, {
+    const res = await fetch(`${API}/api/rooms/${code}/scripts`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name, content: '' }),
@@ -127,7 +129,7 @@ export const usePrompterStore = create((set, get) => ({
   deleteScript: async (id) => {
     const code = get().room?.code;
     if (!code) return;
-    await fetch(`/api/rooms/${code}/scripts/${id}`, { method: 'DELETE' });
+    await fetch(`${API}/api/rooms/${code}/scripts/${id}`, { method: 'DELETE' });
     const remaining = get().scripts.filter(s => s.id !== id);
     const next      = remaining[0] ?? null;
     set({ scripts: remaining, activeScriptId: next?.id ?? null, content: next?.content ?? '' });

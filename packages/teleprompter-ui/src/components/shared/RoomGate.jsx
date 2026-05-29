@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePrompterStore } from '../../store/prompterStore.js';
 
+const API = import.meta.env.VITE_API_URL || '';
+
 function formatCode(raw) {
   const clean = raw.toUpperCase().replace(/[^A-Z0-9]/g, '');
   return clean.length <= 2 ? clean : `${clean.slice(0, 2)}-${clean.slice(2, 6)}`;
@@ -31,7 +33,7 @@ export function RoomGate() {
     setCreating(true);
     setCreateError('');
     try {
-      const res = await fetch('/api/rooms', {
+      const res = await fetch(`${API}/api/rooms`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: createName.trim(), type: 'teleprompter' }),
@@ -53,7 +55,7 @@ export function RoomGate() {
     setJoining(true);
     setJoinError('');
     try {
-      const res = await fetch(`/api/rooms/${code}`);
+      const res = await fetch(`${API}/api/rooms/${code}`);
       if (!res.ok) throw Object.assign(new Error('Room not found'), { status: res.status });
       const room = await res.json();
       setRoom(room);

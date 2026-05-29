@@ -1,14 +1,11 @@
 import { useEffect, useRef } from 'react';
 import { usePrompterStore, _setSend } from '../store/prompterStore.js';
 
-function resolveWsUrl() {
-  if (typeof window === 'undefined')     return 'ws://localhost:9876';
-  if (location.hostname === 'localhost') return 'ws://localhost:9876';
-  const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
-  return `${proto}//${location.host}`;
+function resolveWsUrl(code) {
+  const base = import.meta.env.VITE_WS_URL ||
+    (location.hostname === 'localhost' ? 'ws://localhost:9876' : `${location.protocol === 'https:' ? 'wss:' : 'ws:'}//${location.host}`);
+  return code ? `${base}/ws?room=${code}` : base;
 }
-
-const WS_URL     = resolveWsUrl();
 const BASE_DELAY = 1_000;
 const MAX_DELAY  = 30_000;
 
@@ -23,7 +20,8 @@ export function usePrompterWS() {
 
     function connect() {
       if (!aliveRef.current) return;
-      const ws = new WebSocket(WS_URL);
+      const code = usePrompterStore.getState().room?.code;
+      const ws = new WebSocket(resolveWsUrl(code));
       socketRef.current = ws;
 
       _setSend((type, payload = {}) => {

@@ -10,9 +10,8 @@ function formatCode(raw) {
 }
 
 function redirectTeleprompter(room) {
-  sessionStorage.setItem('showstack_prompter_room', room.code);
-  const base = import.meta.env.VITE_TELEPROMPTER_URL || '/teleprompter/';
-  window.location.href = base;
+  const base = (import.meta.env.VITE_TELEPROMPTER_URL || '/teleprompter/').replace(/\/$/, '');
+  window.location.href = `${base}/room/${room.code}`;
 }
 
 function fmtTime(s) {

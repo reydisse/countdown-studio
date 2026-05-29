@@ -5,6 +5,8 @@ import { RoomGate }         from './components/shared/RoomGate.jsx';
 import { ControllerView }   from './components/controller/ControllerView.jsx';
 import { ReaderView }       from './components/reader/ReaderView.jsx';
 
+const API = import.meta.env.VITE_API_URL || '';
+
 // ── Error boundary ────────────────────────────────────────────────────────────
 class ErrorBoundary extends React.Component {
   constructor(props) { super(props); this.state = { error: null }; }
@@ -52,7 +54,7 @@ function ReaderLoader() {
 
   useEffect(() => {
     if (room?.code === code) { setReady(true); return; }
-    fetch(`/api/rooms/${code}`)
+    fetch(`${API}/api/rooms/${code}`)
       .then(r => r.ok ? r.json() : Promise.reject(r.status))
       .then(r => { setRoom(r); setReady(true); })
       .catch(() => { setMissing(true); setReady(true); });

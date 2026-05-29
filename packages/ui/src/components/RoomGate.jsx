@@ -141,7 +141,7 @@ function ShowcasePanel() {
         }
       `}</style>
 
-      <div className="relative w-full h-full flex flex-col overflow-hidden select-none"
+      <div className="relative w-full h-full min-h-0 flex flex-col overflow-hidden select-none"
         style={{ background: 'linear-gradient(160deg, #0e0c0a 0%, #080604 60%, #0c0a08 100%)' }}>
 
         {/* Scan line */}
@@ -177,7 +177,7 @@ function ShowcasePanel() {
         </div>
 
         {/* Main countdown */}
-        <div className="flex-1 flex flex-col items-center justify-center px-6 gap-3">
+        <div className="flex-1 min-h-0 flex flex-col items-center justify-center px-6 gap-3">
           <div className="text-[10px] font-semibold tracking-[0.3em] text-text-disabled uppercase mb-1">
             Session Timer
           </div>
@@ -319,17 +319,17 @@ export function RoomGate() {
   ];
 
   return (
-    <div className="min-h-screen flex bg-surface-base text-text-primary font-sans overflow-hidden">
+    <div className="h-screen flex bg-surface-base text-text-primary font-sans overflow-hidden">
 
       {/* ── Left: Showcase panel ─────────────────────────────────────────── */}
-      <div className="hidden lg:flex flex-1 p-6">
-        <div className="w-full rounded-2xl overflow-hidden" style={{ boxShadow: '0 0 0 1px rgba(232,168,56,0.12), 0 32px 64px rgba(0,0,0,0.6)' }}>
+      <div className="hidden lg:flex flex-1 min-w-0 p-5">
+        <div className="w-full h-full rounded-2xl overflow-hidden" style={{ boxShadow: '0 0 0 1px rgba(232,168,56,0.12), 0 32px 64px rgba(0,0,0,0.6)' }}>
           <ShowcasePanel />
         </div>
       </div>
 
       {/* ── Right: Form ─────────────────────────────────────────────────── */}
-      <div className="w-full lg:w-[420px] flex flex-col items-center justify-center px-8 py-12 shrink-0">
+      <div className="w-full lg:w-[400px] shrink-0 flex flex-col items-center justify-center overflow-y-auto px-6 py-10">
 
         {/* Logo */}
         <div className="mb-10 select-none">

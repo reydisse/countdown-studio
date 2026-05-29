@@ -83,8 +83,37 @@ export default function App() {
   }, []);
 
   if (!ready) return (
-    <div className="min-h-screen flex items-center justify-center bg-surface-base">
-      <div className="w-6 h-6 rounded-full border-2 border-accent border-t-transparent animate-spin" />
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#050505', gap: 32 }}>
+      <style>{`
+        @keyframes shimmer {
+          0%   { backgroundPosition: -400px 0; }
+          100% { backgroundPosition:  400px 0; }
+        }
+        @keyframes skimFade {
+          0%, 100% { opacity: 0.4; }
+          50%       { opacity: 1; }
+        }
+      `}</style>
+
+      <img src="/showstack-logo.svg" alt="ShowStack" style={{ height: 40, opacity: 0.6 }} />
+
+      {/* Skeleton script lines */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14, width: 280 }}>
+        {[90, 75, 95, 60, 82].map((w, i) => (
+          <div key={i} style={{
+            height: 13, borderRadius: 6,
+            background: 'linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.09) 50%, rgba(255,255,255,0.04) 75%)',
+            backgroundSize: '400px 100%',
+            animation: `shimmer 1.6s ease-in-out ${i * 0.12}s infinite`,
+            width: `${w}%`,
+          }} />
+        ))}
+      </div>
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'rgba(255,255,255,0.25)', fontSize: 11, letterSpacing: '0.15em', textTransform: 'uppercase', animation: 'skimFade 1.8s ease-in-out infinite' }}>
+        <div style={{ width: 20, height: 20, border: '2px solid rgba(232,168,56,0.5)', borderTopColor: '#e8a838', borderRadius: '50%', animation: 'spin 0.9s linear infinite' }} />
+        Loading
+      </div>
     </div>
   );
 

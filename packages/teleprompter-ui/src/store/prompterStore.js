@@ -91,6 +91,14 @@ export const usePrompterStore = create((set, get) => ({
 
   setActiveScript: (id, content) => set({ activeScriptId: id, content: content ?? '' }),
 
+  // selectScript: called from controller — updates locally AND notifies reader via WS
+  selectScript: (id, content) => {
+    set({ activeScriptId: id, content: content ?? '' });
+    send('prompter:script', { scriptId: id, content: content ?? '' });
+  },
+
+  _applyScript: ({ scriptId, content }) => set({ activeScriptId: scriptId, content: content ?? '' }),
+
   updateContent: (text) => set({ content: text }),
 
   saveScript: async () => {

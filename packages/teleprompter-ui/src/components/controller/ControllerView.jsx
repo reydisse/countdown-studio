@@ -11,7 +11,7 @@ export function ControllerView() {
 
   const {
     room, isPlaying, play, pause, stop,
-    scripts, activeScriptId, setActiveScript, createScript,
+    scripts, activeScriptId, selectScript, createScript,
     updateDisplay, wsConnected,
     fontSize, lineWidth, fontFamily, textColor, bgColor,
     isMirrored, isFlippedVertical, showFocusLine, focusLinePosition,
@@ -42,7 +42,7 @@ export function ControllerView() {
         <div className="flex flex-col flex-1 overflow-hidden border-r border-border-subtle">
           <div className="flex items-center gap-1 px-3 py-2 border-b border-border-subtle bg-surface-raised overflow-x-auto shrink-0">
             {scripts.map(s => (
-              <button key={s.id} onClick={() => setActiveScript(s.id, s.content)}
+              <button key={s.id} onClick={() => selectScript(s.id, s.content)}
                 className={`px-3 py-1 rounded text-xs font-medium transition-colors whitespace-nowrap
                   ${s.id === activeScriptId
                     ? 'bg-accent/20 text-accent border border-accent/30'

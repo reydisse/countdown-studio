@@ -46,6 +46,7 @@ export function usePrompterWS() {
         switch (type) {
           case 'room:joined':
             store.setJoined({ joined: true, prompter: payload.prompter });
+            if (payload.script) store._applyScript(payload.script);
             break;
           case 'room:not_found':
             store.leaveRoom();
@@ -55,6 +56,9 @@ export function usePrompterWS() {
             break;
           case 'prompter:display':
             store._applyDisplay(payload);
+            break;
+          case 'prompter:script':
+            store._applyScript(payload);
             break;
         }
       };

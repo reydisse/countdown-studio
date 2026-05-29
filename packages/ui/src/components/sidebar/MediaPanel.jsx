@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useMediaStore }  from '../../stores/mediaStore.js';
 import { SidebarSection } from './SidebarSection.jsx';
 import { Button }         from '../shared/Button.jsx';
-import { openFilePicker, uploadAsset } from '../../adapter/index.js';
+import { openFilePicker } from '../../adapter/index.js';
 
 // ── Single asset card ────────────────────────────────────────────────────────
 function AssetCard({ asset, onDelete }) {
@@ -122,7 +122,7 @@ export function MediaPanel() {
     setUploadingType(type);
     try {
       const files = await openFilePicker({ accept: ACCEPT_MAP[type], multiple: true });
-      for (const f of files) await uploadAsset(f);
+      for (const f of files) await useMediaStore.getState().upload(f);
     } finally {
       setUploadingType(null);
     }

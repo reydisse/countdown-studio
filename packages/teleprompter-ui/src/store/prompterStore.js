@@ -91,8 +91,9 @@ export const usePrompterStore = create((set, get) => ({
 
   setActiveScript: (id, content) => set({ activeScriptId: id, content: content ?? '' }),
 
-  // selectScript: called from controller — updates locally AND notifies reader via WS
-  selectScript: (id, content) => {
+  // selectScript: called from controller — saves current first, then switches + notifies reader
+  selectScript: async (id, content) => {
+    await get().saveScript();
     set({ activeScriptId: id, content: content ?? '' });
     send('prompter:script', { scriptId: id, content: content ?? '' });
   },
@@ -124,6 +125,7 @@ export const usePrompterStore = create((set, get) => ({
   createScript: async (name) => {
     const code = get().room?.code;
     if (!code || !name) return;
+    await get().saveScript();
     const res = await fetch(`${API}/api/rooms/${code}/scripts`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

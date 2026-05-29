@@ -39,6 +39,7 @@ export function ScriptEditor() {
   }
 
   const wordCount = content.trim() ? content.trim().split(/\s+/).length : 0;
+  const readMins  = wordCount > 0 ? Math.ceil(wordCount / 130) : 0;
 
   return (
     <div className="flex flex-col flex-1 overflow-hidden">
@@ -52,7 +53,9 @@ export function ScriptEditor() {
           className="px-2 py-1 rounded text-xs text-text-muted hover:text-text-primary hover:bg-surface-elevated transition-colors">
           + Cue
         </button>
-        <span className="ml-auto text-xs text-text-disabled">{wordCount} words</span>
+        <span className="ml-auto text-xs text-text-disabled">
+          {wordCount} words{readMins > 0 && <span className="text-text-muted"> · ~{readMins} min</span>}
+        </span>
       </div>
 
       <textarea

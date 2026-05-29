@@ -22,7 +22,8 @@ new_classes = ["RoomRegistry"]
 [[d1_databases]]
 binding = "DB"
 database_name = "showstack-db"
-database_id = "PASTE_DATABASE_ID_HERE"
+database_id = "22a4f116-38ba-4273-badc-d68c41c41623"
+migrations_dir = "src/db/migrations"
 
 [[r2_buckets]]
 binding = "MEDIA"
@@ -31,7 +32,7 @@ bucket_name = "showstack-media"
 [vars]
 ENVIRONMENT = "production"
 MEDIA_PUBLIC_URL = "https://showstackmedia.faithfireproduction.com"
-ALLOWED_ORIGINS = "https://showstack-countdown.pages.dev,https://showstack-teleprompter.pages.dev,https://countdownstudio.faithfireproduction.com"
+ALLOWED_ORIGINS = "https://showstack-countdown.pages.dev,https://showstack-teleprompter.pages.dev,https://showstack.faithfireproduction.com"
 
 [[routes]]
 pattern = "showstackapi.faithfireproduction.com/*"

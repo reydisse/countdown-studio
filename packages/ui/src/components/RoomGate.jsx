@@ -11,7 +11,8 @@ function formatCode(raw) {
 
 function redirectTeleprompter(room) {
   sessionStorage.setItem('showstack_prompter_room', room.code);
-  window.location.href = '/teleprompter/';
+  const base = import.meta.env.VITE_TELEPROMPTER_URL || '/teleprompter/';
+  window.location.href = base;
 }
 
 function fmtTime(s) {

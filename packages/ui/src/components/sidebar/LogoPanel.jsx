@@ -4,7 +4,7 @@ import { useMediaStore }    from '../../stores/mediaStore.js';
 import { SidebarSection }   from './SidebarSection.jsx';
 import { Button }           from '../shared/Button.jsx';
 import { Slider }           from '../shared/Slider.jsx';
-import { openFilePicker, uploadAsset } from '../../adapter/index.js';
+import { openFilePicker } from '../../adapter/index.js';
 
 const POSITIONS = [
   { value: 'top-left',      label: '↖' },
@@ -28,7 +28,7 @@ export function LogoPanel() {
     try {
       const files = await openFilePicker({ accept: 'image/*', multiple: false });
       if (!files.length) return;
-      const a = await uploadAsset(files[0]);
+      const a = await useMediaStore.getState().upload(files[0]);
       update({ logoAssetId: a.id });
     } finally { setLoading(false); }
   };

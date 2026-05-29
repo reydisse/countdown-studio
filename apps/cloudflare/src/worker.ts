@@ -3,6 +3,7 @@ import type { Bindings } from './types.js'
 import roomsRoute    from './routes/rooms.js'
 import prompterRoute from './routes/prompter.js'
 import healthRoute   from './routes/health.js'
+import projectsRoute from './routes/projects.js'
 
 export { RoomObject }   from './durableObjects/RoomObject.js'
 export { RoomRegistry } from './durableObjects/RoomRegistry.js'
@@ -23,6 +24,7 @@ app.use('*', async (c, next) => {
 app.route('/api/rooms',    roomsRoute)
 app.route('/api/prompter', prompterRoute)
 app.route('/api/health',   healthRoute)
+app.route('/api/projects', projectsRoute)
 
 // WebSocket upgrade — routes to the correct RoomObject DO
 app.get('/ws', async (c) => {

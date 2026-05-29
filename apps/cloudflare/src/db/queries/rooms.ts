@@ -19,6 +19,11 @@ export async function getRoomByCode(db: D1Database, code: string): Promise<Room 
   return result ?? null
 }
 
+export async function getRoomById(db: D1Database, id: string): Promise<Room | null> {
+  const result = await db.prepare('SELECT * FROM rooms WHERE id = ?').bind(id).first<Room>()
+  return result ?? null
+}
+
 export async function updateRoomSettings(db: D1Database, code: string, settingsJson: string): Promise<void> {
   await db.prepare('UPDATE rooms SET settings_json = ? WHERE code = ?').bind(settingsJson, code).run()
 }

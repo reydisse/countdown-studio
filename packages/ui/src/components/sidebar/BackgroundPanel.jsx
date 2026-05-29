@@ -6,8 +6,8 @@ import { TabGroup }         from '../shared/TabGroup.jsx';
 import { Button }           from '../shared/Button.jsx';
 import { ColorPicker }      from '../shared/ColorPicker.jsx';
 import { Slider }           from '../shared/Slider.jsx';
-import { openFilePicker, uploadAsset } from '../../adapter/index.js';
-import { useShallow }                  from 'zustand/react/shallow';
+import { openFilePicker } from '../../adapter/index.js';
+import { useShallow }      from 'zustand/react/shallow';
 
 const TABS = [
   { value: 'color',     label: 'Theme'     },
@@ -56,7 +56,7 @@ function AssetPicker({ type, value, onChange }) {
 async function pickAndUpload(accept, onDone) {
   const files = await openFilePicker({ accept, multiple: false });
   if (!files.length) return;
-  const asset = await uploadAsset(files[0]);
+  const asset = await useMediaStore.getState().upload(files[0]);
   onDone(asset.id);
 }
 

@@ -32,32 +32,32 @@ jobs:
           pnpm --filter @showstack/web build
           pnpm --filter @showstack/teleprompter-app build
         env:
-          VITE_API_URL: https://api.YOURDOMAIN.com
-          VITE_WS_URL: wss://api.YOURDOMAIN.com
+          VITE_API_URL: https://showstackapi.faithfireproduction.com
+          VITE_WS_URL: wss://showstackapi.faithfireproduction.com
 
       - name: Build Electron (Windows)
         if: matrix.os == 'windows-latest'
         run: pnpm --filter @showstack/electron build:win
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          CF_API_URL: https://api.YOURDOMAIN.com
-          CF_WS_URL: wss://api.YOURDOMAIN.com
+          CF_API_URL: https://showstackapi.faithfireproduction.com
+          CF_WS_URL: wss://showstackapi.faithfireproduction.com
 
       - name: Build Electron (macOS)
         if: matrix.os == 'macos-latest'
         run: pnpm --filter @showstack/electron build:mac
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          CF_API_URL: https://api.YOURDOMAIN.com
-          CF_WS_URL: wss://api.YOURDOMAIN.com
+          CF_API_URL: https://showstackapi.faithfireproduction.com
+          CF_WS_URL: wss://showstackapi.faithfireproduction.com
 
       - name: Build Electron (Linux)
         if: matrix.os == 'ubuntu-latest'
         run: pnpm --filter @showstack/electron build:linux
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          CF_API_URL: https://api.YOURDOMAIN.com
-          CF_WS_URL: wss://api.YOURDOMAIN.com
+          CF_API_URL: https://showstackapi.faithfireproduction.com
+          CF_WS_URL: wss://showstackapi.faithfireproduction.com
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4

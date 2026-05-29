@@ -30,9 +30,9 @@ bucket_name = "showstack-media"
 
 [vars]
 ENVIRONMENT = "production"
-MEDIA_PUBLIC_URL = "https://media.YOURDOMAIN.com"
-ALLOWED_ORIGINS = "https://showstack-countdown.pages.dev,https://showstack-teleprompter.pages.dev,https://YOURDOMAIN.com"
+MEDIA_PUBLIC_URL = "https://showstackmedia.faithfireproduction.com"
+ALLOWED_ORIGINS = "https://showstack-countdown.pages.dev,https://showstack-teleprompter.pages.dev,https://countdownstudio.faithfireproduction.com"
 
 [[routes]]
-pattern = "api.YOURDOMAIN.com/*"
-zone_name = "YOURDOMAIN.com"
+pattern = "showstackapi.faithfireproduction.com/*"
+zone_name = "faithfireproduction.com"

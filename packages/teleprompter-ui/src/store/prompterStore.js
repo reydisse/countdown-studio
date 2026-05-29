@@ -13,6 +13,7 @@ export const usePrompterStore = create((set, get) => ({
 
   scripts:        [],
   activeScriptId: null,
+  readerScriptId: null,  // which script the reader is currently showing
   content:        '',
 
   scrollPosition: 0,
@@ -86,7 +87,10 @@ export const usePrompterStore = create((set, get) => ({
     set({ scripts });
     const { activeScriptId } = get();
     const target = scripts.find(s => s.id === activeScriptId) ?? scripts[0] ?? null;
-    if (target) get().setActiveScript(target.id, target.content);
+    if (target) {
+      get().setActiveScript(target.id, target.content);
+      set({ readerScriptId: target.id });
+    }
   },
 
   setActiveScript: (id, content) => set({ activeScriptId: id, content: content ?? '' }),
@@ -94,7 +98,7 @@ export const usePrompterStore = create((set, get) => ({
   // selectScript: called from controller — saves current first, then switches + notifies reader
   selectScript: async (id, content) => {
     await get().saveScript();
-    set({ activeScriptId: id, content: content ?? '' });
+    set({ activeScriptId: id, content: content ?? '', readerScriptId: id });
     send('prompter:script', { scriptId: id, content: content ?? '' });
   },
 
@@ -103,7 +107,7 @@ export const usePrompterStore = create((set, get) => ({
   updateContent: (text) => set({ content: text }),
 
   saveScript: async () => {
-    const { room, activeScriptId, content, scripts } = get();
+    const { room, activeScriptId, content, scripts, readerScriptId } = get();
     if (!room) return;
     if (!activeScriptId) {
       // No script yet — create one then save
@@ -116,9 +120,11 @@ export const usePrompterStore = create((set, get) => ({
       body: JSON.stringify({ content }),
     });
     if (res.ok) {
-      const updated = await res.json();
-      set({ scripts: scripts.map(s => s.id === updated.id ? updated : s) });
-      send('prompter:script', { scriptId: activeScriptId, content });
+      set({ scripts: scripts.map(s => s.id === activeScriptId ? { ...s, content } : s) });
+      // Only push to reader if this is the script the reader is already showing
+      if (activeScriptId === readerScriptId) {
+        send('prompter:script', { scriptId: activeScriptId, content });
+      }
     }
   },
 

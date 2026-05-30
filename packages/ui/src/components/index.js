@@ -12,6 +12,7 @@ export { CountdownDisplay } from './canvas/CountdownDisplay.jsx';
 export { SlideDots }        from './canvas/SlideDots.jsx';
 export { ScrimLayer }       from './canvas/ScrimLayer.jsx';
 export { PreviewCanvas }    from './canvas/PreviewCanvas.jsx';
+export { OutputPage }       from './canvas/OutputPage.jsx';
 
 // Sidebar
 export { Sidebar }          from './sidebar/Sidebar.jsx';

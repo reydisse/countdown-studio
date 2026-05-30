@@ -1,11 +1,10 @@
 import { useState } from 'react';
+import { useRoomStore }   from '../../stores/roomStore.js';
 import { SidebarSection } from './SidebarSection.jsx';
 import { TabGroup }       from '../shared/TabGroup.jsx';
 import { Button }         from '../shared/Button.jsx';
-import { getServerUrl }   from '../../adapter/index.js';
 import { exportHtml }     from '../../utils/exportHtml.js';
 
-const OUTPUT_URL  = `${getServerUrl()}/output`;
 const TABS = [
   { value: 'browser', label: 'Browser' },
   { value: 'vmix',    label: 'vMix'    },
@@ -34,6 +33,8 @@ function CopyField({ value }) {
 
 export function OutputPanel() {
   const [tab, setTab] = useState('browser');
+  const roomCode = useRoomStore(s => s.room?.code);
+  const OUTPUT_URL = `${window.location.origin}/output${roomCode ? `?room=${roomCode}` : ''}`;
 
   return (
     <SidebarSection title="Output" defaultOpen={false}>

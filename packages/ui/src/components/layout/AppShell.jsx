@@ -6,6 +6,7 @@ import { useMediaStore }    from '../../stores/mediaStore.js';
 import { useTimerStore }    from '../../stores/timerStore.js';
 import { useRoomStore }     from '../../stores/roomStore.js';
 import { PreviewCanvas }   from '../canvas/PreviewCanvas.jsx';
+import { OutputPage }      from '../canvas/OutputPage.jsx';
 import { Sidebar }         from '../sidebar/Sidebar.jsx';
 import { PlanView }        from '../plan/PlanView.jsx';
 import { ModeBar }         from './ModeBar.jsx';
@@ -14,6 +15,9 @@ import { RoomGate }        from '../RoomGate.jsx';
 import { UpdateBanner }    from '../shared/UpdateBanner.jsx';
 
 export function AppShell() {
+  if (typeof window !== 'undefined' && window.location.pathname === '/output') {
+    return <OutputPage />;
+  }
   const [ready, setReady] = useState(false);
   const room              = useRoomStore(s => s.room);
 

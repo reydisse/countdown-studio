@@ -85,7 +85,12 @@ export function useWebSocket() {
             useRoomStore.getState().setJoined(true);
             useTimerStore.getState()._tick(payload.timer);
             useSettingsStore.getState().applyFromServer(payload.settings ?? {});
-            useCueStore.getState().setCues(payload.cues ?? []);
+            useCueStore.getState().setCues(
+              (payload.cues ?? []).map(c => ({
+                ...c,
+                actions: (() => { try { return JSON.parse(c.actions_json ?? '[]') } catch { return [] } })(),
+              }))
+            );
             break;
           case EV.ROOM_NOT_FOUND:
             useRoomStore.getState().leaveRoom();

@@ -35,10 +35,14 @@ export function PlanView({ slideshowRef }) {
       try {
         const pid  = await ensureProject();
         if (cancelled) return;
-        storeLload(pid);                                  // sets activeProjectId + sends WS LOAD_PROJECT
+        storeLload(pid);
         const list = await getCues(pid);
         if (cancelled) return;
-        storeSetCues(list);
+        // Parse actions_json → actions (DB field vs client field)
+        storeSetCues(list.map(c => ({
+          ...c,
+          actions: (() => { try { return JSON.parse(c.actions_json ?? '[]') } catch { return [] } })(),
+        })));
       } catch (err) {
         console.error('PlanView init:', err);
       }
@@ -54,8 +58,10 @@ export function PlanView({ slideshowRef }) {
       label,
       actions:    [],
     });
-    useCueStore.getState().add(cue);
-    setSelectedCue(cue);
+    // Parse actions_json → actions from the API response
+    const parsed = { ...cue, actions: (() => { try { return JSON.parse(cue.actions_json ?? '[]') } catch { return [] } })() };
+    useCueStore.getState().add(parsed);
+    setSelectedCue(parsed);
   }, [activeProjectId]);
 
   const handleSave = useCallback(async (cueId, data) => {
@@ -63,9 +69,10 @@ export function PlanView({ slideshowRef }) {
     setSaving(true);
     try {
       const updated = await updateCue(activeProjectId, cueId, data);
-      useCueStore.getState().update(cueId, updated);
+      // Use the server response if it's a full cue object, otherwise merge sent data
+      const merged = (updated && updated.id) ? updated : data;
+      useCueStore.getState().update(cueId, merged);
       setSelectedCue(null);
-      send(LOAD_PROJECT, { projectId: activeProjectId });
     } finally {
       setSaving(false);
     }
@@ -73,10 +80,22 @@ export function PlanView({ slideshowRef }) {
 
   const handleDelete = useCallback(async (cueId) => {
     if (!activeProjectId) return;
-    await deleteCue(activeProjectId, cueId);
+    // Optimistic removal
     useCueStore.getState().remove(cueId);
     setSelectedCue(null);
-    send(LOAD_PROJECT, { projectId: activeProjectId });
+    try {
+      await deleteCue(activeProjectId, cueId);
+    } catch (err) {
+      console.error('Delete cue failed:', err);
+      // Reload to restore correct state on failure
+      try {
+        const list = await getCues(activeProjectId);
+        useCueStore.getState().setCues(list.map(c => ({
+          ...c,
+          actions: (() => { try { return JSON.parse(c.actions_json ?? '[]') } catch { return [] } })(),
+        })));
+      } catch { /* ignore */ }
+    }
   }, [activeProjectId]);
 
   // Drag-and-drop move on the timeline
@@ -84,13 +103,18 @@ export function PlanView({ slideshowRef }) {
     if (!activeProjectId) return;
     const cue = useCueStore.getState().cues.find(c => c.id === cueId);
     if (!cue) return;
-    const updated = await updateCue(activeProjectId, cueId, {
-      trigger_at: newTriggerAt,
-      label:      cue.label,
-      actions:    cue.actions,
-    });
-    useCueStore.getState().update(cueId, updated);
-    send(LOAD_PROJECT, { projectId: activeProjectId });
+    // Optimistically update position so it doesn't snap back
+    useCueStore.getState().update(cueId, { trigger_at: newTriggerAt });
+    try {
+      await updateCue(activeProjectId, cueId, {
+        trigger_at: newTriggerAt,
+        label:      cue.label,
+        // Don't send actions on a position-only move — avoids accidentally overwriting
+      });
+    } catch (err) {
+      console.error('Move cue failed:', err);
+      useCueStore.getState().update(cueId, { trigger_at: cue.trigger_at });
+    }
   }, [activeProjectId]);
 
   return (

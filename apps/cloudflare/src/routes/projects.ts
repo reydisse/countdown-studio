@@ -15,6 +15,13 @@ function roomToProject(room: { id: string; code: string; name: string; settings_
   return { id: room.id, code: room.code, name: room.name, type: room.type, settings }
 }
 
+function parseCue(row: { id: string; room_code: string; trigger_at: number; label: string; actions_json: string; order_index: number; created_at: number }) {
+  return {
+    ...row,
+    actions: (() => { try { return JSON.parse(row.actions_json ?? '[]') } catch { return [] } })(),
+  }
+}
+
 // ── Project CRUD ───────────────────────────────────────────────────────────────
 
 projects.get('/', async (c) => {
@@ -61,7 +68,8 @@ projects.delete('/:id', async (c) => {
 projects.get('/:id/cues', async (c) => {
   const room = await getRoomById(c.env.DB, c.req.param('id'))
   if (!room) return c.json({ error: 'project not found' }, 404)
-  return c.json(await getCuesByRoom(c.env.DB, room.code))
+  const cues = await getCuesByRoom(c.env.DB, room.code)
+  return c.json(cues.map(parseCue))
 })
 
 projects.post('/:id/cues', async (c) => {
@@ -75,7 +83,7 @@ projects.post('/:id/cues', async (c) => {
     triggerAt: Number(trigger_at), label: label ?? '',
     actionsJson: JSON.stringify(actions), orderIndex: Number(order_index),
   })
-  return c.json(cue, 201)
+  return c.json(parseCue(cue), 201)
 })
 
 projects.put('/:id/cues/:cueId', async (c) => {
@@ -88,7 +96,10 @@ projects.put('/:id/cues/:cueId', async (c) => {
     actionsJson: body.actions !== undefined ? JSON.stringify(body.actions) : undefined,
     orderIndex:  body.order_index !== undefined ? Number(body.order_index) : undefined,
   })
-  return c.json({ ok: true })
+  // Return the updated cue so the client can sync without an extra fetch
+  const updated = await c.env.DB.prepare('SELECT * FROM room_cues WHERE id = ?')
+    .bind(c.req.param('cueId')).first<{ id: string; room_code: string; trigger_at: number; label: string; actions_json: string; order_index: number; created_at: number }>()
+  return updated ? c.json(parseCue(updated)) : c.json({ ok: true })
 })
 
 projects.delete('/:id/cues/:cueId', async (c) => {

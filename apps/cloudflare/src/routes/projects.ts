@@ -10,6 +10,16 @@ import { generateRoomCode } from '../utils/roomCode.js'
 
 const projects = new Hono<{ Bindings: Bindings }>()
 
+function doStub(env: Bindings, code: string) {
+  return env.ROOM.get(env.ROOM.idFromName(code))
+}
+
+async function reloadCues(env: Bindings, code: string): Promise<void> {
+  try {
+    await doStub(env, code).fetch(new Request('http://do/reload-cues', { method: 'POST' }))
+  } catch { /* non-fatal — DO may not be running yet */ }
+}
+
 function roomToProject(room: { id: string; code: string; name: string; settings_json?: string; type: string; [k: string]: unknown }) {
   const settings = (() => { try { return JSON.parse(room.settings_json as string ?? '{}') } catch { return {} } })()
   return { id: room.id, code: room.code, name: room.name, type: room.type, settings }
@@ -83,6 +93,7 @@ projects.post('/:id/cues', async (c) => {
     triggerAt: Number(trigger_at), label: label ?? '',
     actionsJson: JSON.stringify(actions), orderIndex: Number(order_index),
   })
+  await reloadCues(c.env, room.code)
   return c.json(parseCue(cue), 201)
 })
 
@@ -99,11 +110,14 @@ projects.put('/:id/cues/:cueId', async (c) => {
   // Return the updated cue so the client can sync without an extra fetch
   const updated = await c.env.DB.prepare('SELECT * FROM room_cues WHERE id = ?')
     .bind(c.req.param('cueId')).first<{ id: string; room_code: string; trigger_at: number; label: string; actions_json: string; order_index: number; created_at: number }>()
+  await reloadCues(c.env, room.code)
   return updated ? c.json(parseCue(updated)) : c.json({ ok: true })
 })
 
 projects.delete('/:id/cues/:cueId', async (c) => {
+  const room = await getRoomById(c.env.DB, c.req.param('id'))
   await deleteCue(c.env.DB, c.req.param('cueId'))
+  if (room) await reloadCues(c.env, room.code)
   return new Response(null, { status: 204 })
 })
 

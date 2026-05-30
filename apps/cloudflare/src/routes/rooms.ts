@@ -153,6 +153,7 @@ rooms.put('/:code/cues/:id', async (c) => {
 rooms.delete('/:code/cues/:id', async (c) => {
   const { code, id } = c.req.param()
   await deleteCue(c.env.DB, id)
+  await doStub(c.env, code).fetch(new Request('http://do/reload-cues', { method: 'POST' }))
   return new Response(null, { status: 204 })
 })
 

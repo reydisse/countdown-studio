@@ -97,8 +97,12 @@ export class RoomTimer {
       for (let sec = prevRemaining - 1; sec >= newRemaining; sec--) {
         for (const cue of cues) {
           if (cue.trigger_at === sec) {
+            // Parse actions_json into an array so the client's executeCueActions can iterate it.
+            // cues are raw DB rows (actions_json = string); we must parse here before broadcast.
+            let actions: unknown[]
+            try { actions = JSON.parse(cue.actions_json ?? '[]') } catch { actions = [] }
             this.broadcast('cue:fired', {
-              cueId: cue.id, triggerAt: sec, label: cue.label, actions: cue.actions_json,
+              cue: { ...cue, actions },
             })
           }
         }

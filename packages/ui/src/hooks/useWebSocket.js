@@ -99,9 +99,16 @@ export function useWebSocket() {
           case EV.TIMER_STATE:
             useTimerStore.getState()._tick(payload);
             break;
-          case EV.CUE_FIRED:
-            useCueStore.getState().executeCueActions(payload.cue);
+          case EV.CUE_FIRED: {
+            // payload.cue should already have an `actions` array (parsed server-side).
+            // Guard: if actions is missing/string, parse actions_json as a fallback.
+            const firedCue = payload.cue ?? payload;
+            if (!Array.isArray(firedCue.actions)) {
+              try { firedCue.actions = JSON.parse(firedCue.actions_json ?? firedCue.actions ?? '[]') } catch { firedCue.actions = [] }
+            }
+            useCueStore.getState().executeCueActions(firedCue);
             break;
+          }
           case EV.ASSET_ADDED:
             useMediaStore.getState()._add(payload.asset);
             break;

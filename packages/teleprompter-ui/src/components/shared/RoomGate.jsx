@@ -198,6 +198,21 @@ function ShowcasePanel() {
   );
 }
 
+// ── Toggle ────────────────────────────────────────────────────────────────────
+
+function Toggle({ checked, onChange, label }) {
+  return (
+    <button type="button" role="switch" aria-checked={checked}
+      onClick={() => onChange(!checked)}
+      className="flex items-center gap-3 cursor-pointer select-none w-fit">
+      <div className={`relative w-9 h-5 rounded-full transition-colors duration-200 ${checked ? 'bg-accent' : 'bg-surface-overlay'}`}>
+        <div className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full shadow transition-transform duration-200 ${checked ? 'translate-x-4 bg-black' : 'bg-text-disabled'}`} />
+      </div>
+      <span className={`text-sm transition-colors ${checked ? 'text-text-primary' : 'text-text-muted'}`}>{label}</span>
+    </button>
+  );
+}
+
 // ── Main component ────────────────────────────────────────────────────────────
 
 export function RoomGate() {
@@ -205,12 +220,22 @@ export function RoomGate() {
   const navigate = useNavigate();
 
   const [createName,  setCreateName]  = useState('');
+  const [permanent,   setPermanent]   = useState(false);
   const [creating,    setCreating]    = useState(false);
   const [createError, setCreateError] = useState('');
 
   const [joinCode,  setJoinCode]  = useState('');
   const [joining,   setJoining]   = useState(false);
   const [joinError, setJoinError] = useState('');
+
+  const [recentRooms, setRecentRooms] = useState([]);
+
+  useEffect(() => {
+    fetch(`${API}/api/rooms?type=teleprompter`)
+      .then(r => r.ok ? r.json() : [])
+      .then(rooms => setRecentRooms(rooms.filter(r => r.is_permanent === 1)))
+      .catch(() => {});
+  }, []);
 
   async function handleCreate(e) {
     e.preventDefault();
@@ -221,7 +246,7 @@ export function RoomGate() {
       const res = await fetch(`${API}/api/rooms`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: createName.trim(), type: 'teleprompter' }),
+        body: JSON.stringify({ name: createName.trim(), type: 'teleprompter', isPermanent: permanent }),
       });
       if (!res.ok) throw new Error((await res.json()).error || 'Could not create room');
       const room = await res.json();
@@ -249,6 +274,11 @@ export function RoomGate() {
       setJoinError(err.status === 404 ? 'Room not found' : err.message);
       setJoining(false);
     }
+  }
+
+  async function handleEnterRecent(room) {
+    setRoom(room);
+    navigate(`/room/${room.code}`);
   }
 
   return (
@@ -288,21 +318,24 @@ export function RoomGate() {
                   text-sm text-text-primary placeholder-text-disabled
                   focus:outline-none focus:border-accent focus:bg-[#0d0d0d] transition-colors"
               />
-              <button
-                type="submit"
-                disabled={creating}
-                className="flex items-center justify-center gap-2
-                  bg-accent text-black font-semibold text-sm px-5 py-2.5 rounded-lg
-                  hover:bg-accent-hover active:scale-[0.98] transition-all
-                  disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                {creating ? (
-                  <>
-                    <span className="w-3.5 h-3.5 rounded-full border-2 border-black/30 border-t-black animate-spin" />
-                    Creating…
-                  </>
-                ) : 'Create Room'}
-              </button>
+              <div className="flex items-center justify-between gap-3">
+                <Toggle checked={permanent} onChange={setPermanent} label="Permanent room" />
+                <button
+                  type="submit"
+                  disabled={creating}
+                  className="flex items-center justify-center gap-2 shrink-0
+                    bg-accent text-black font-semibold text-sm px-5 py-2.5 rounded-lg
+                    hover:bg-accent-hover active:scale-[0.98] transition-all
+                    disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  {creating ? (
+                    <>
+                      <span className="w-3.5 h-3.5 rounded-full border-2 border-black/30 border-t-black animate-spin" />
+                      Creating…
+                    </>
+                  ) : 'Create Room'}
+                </button>
+              </div>
             </div>
             {createError && <p className="text-xs text-status-danger mt-3">{createError}</p>}
           </form>
@@ -349,6 +382,31 @@ export function RoomGate() {
               </button>
             </div>
           </form>
+
+          {/* Recent permanent rooms */}
+          {recentRooms.length > 0 && (
+            <div className="px-6 pb-6 border-t border-border-subtle pt-5">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-text-disabled mb-3">Recent Rooms</p>
+              <div className="flex flex-col gap-1.5">
+                {recentRooms.map(room => (
+                  <button
+                    key={room.code}
+                    type="button"
+                    onClick={() => handleEnterRecent(room)}
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg border border-border-subtle
+                      bg-surface-elevated hover:bg-surface-overlay hover:border-border-default
+                      transition-colors text-left group"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-text-primary font-medium truncate">{room.name}</p>
+                    </div>
+                    <span className="text-[11px] font-mono text-text-disabled shrink-0">{room.code}</span>
+                    <span className="text-text-muted group-hover:text-accent transition-colors text-xs shrink-0">Enter →</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         <p className="mt-6 text-[11px] text-text-disabled tracking-wide select-none text-center">

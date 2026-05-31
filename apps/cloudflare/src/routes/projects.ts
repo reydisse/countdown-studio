@@ -20,9 +20,9 @@ async function reloadCues(env: Bindings, code: string): Promise<void> {
   } catch { /* non-fatal — DO may not be running yet */ }
 }
 
-function roomToProject(room: { id: string; code: string; name: string; settings_json?: string; type: string; [k: string]: unknown }) {
+function roomToProject(room: { id: string; code: string; name: string; settings_json?: string; type: string; is_permanent?: number; [k: string]: unknown }) {
   const settings = (() => { try { return JSON.parse(room.settings_json as string ?? '{}') } catch { return {} } })()
-  return { id: room.id, code: room.code, name: room.name, type: room.type, settings }
+  return { id: room.id, code: room.code, name: room.name, type: room.type, settings, is_permanent: room.is_permanent ?? 0 }
 }
 
 function parseCue(row: { id: string; room_code: string; trigger_at: number; label: string; actions_json: string; order_index: number; created_at: number }) {

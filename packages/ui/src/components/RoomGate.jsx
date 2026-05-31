@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { createRoom, getRoom } from '../adapter/index.js';
+import { createRoom, getRoom, getProjects } from '../adapter/index.js';
 import { useRoomStore } from '../stores/roomStore.js';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -267,9 +267,10 @@ export function RoomGate() {
   const [creating,  setCreating]  = useState(false);
   const [createErr, setCreateErr] = useState('');
 
-  const [code,    setCode]    = useState(formatCode(initialCode));
-  const [joining, setJoining] = useState(false);
-  const [joinErr, setJoinErr] = useState('');
+  const [code,        setCode]        = useState(formatCode(initialCode));
+  const [joining,     setJoining]     = useState(false);
+  const [joinErr,     setJoinErr]     = useState('');
+  const [recentRooms, setRecentRooms] = useState([]);
 
   useEffect(() => {
     if (initialCode) {
@@ -277,6 +278,12 @@ export function RoomGate() {
       url.searchParams.delete('join');
       window.history.replaceState(null, '', url.toString());
     }
+  }, []);
+
+  useEffect(() => {
+    getProjects()
+      .then(projects => setRecentRooms(projects.filter(p => p.is_permanent === 1 || p.is_permanent === true)))
+      .catch(() => {});
   }, []);
 
   async function handleCreate(e) {
@@ -463,6 +470,45 @@ export function RoomGate() {
           </form>
 
         </div>
+
+        {/* Recent Rooms */}
+        {recentRooms.length > 0 && (
+          <div className="w-full mt-4">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-text-disabled mb-2 px-1">
+              Recent Rooms
+            </p>
+            <div className="flex flex-col gap-1">
+              {recentRooms.map(room => (
+                <button
+                  key={room.id}
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      const r = await getRoom(room.code);
+                      setRoom(r);
+                    } catch {
+                      setJoinErr('Could not open room');
+                    }
+                  }}
+                  className="flex items-center justify-between w-full px-3.5 py-2.5 rounded-lg
+                    bg-surface-raised border border-border-subtle
+                    hover:bg-surface-elevated hover:border-border-default
+                    active:scale-[0.99] transition-all text-left group"
+                >
+                  <span className="text-sm text-text-primary truncate">{room.name}</span>
+                  <div className="flex items-center gap-2 shrink-0 ml-2">
+                    <code className="text-[10px] font-mono text-text-muted bg-surface-base px-1.5 py-0.5 rounded border border-border-subtle">
+                      {room.code}
+                    </code>
+                    <span className="text-xs text-accent opacity-0 group-hover:opacity-100 transition-opacity">
+                      Enter →
+                    </span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         <p className="mt-6 text-[11px] text-text-disabled tracking-wide select-none text-center">
           Rooms expire after 30 minutes of inactivity unless marked permanent.

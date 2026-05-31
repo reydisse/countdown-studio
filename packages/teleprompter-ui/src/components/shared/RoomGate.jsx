@@ -261,7 +261,7 @@ export function RoomGate() {
   async function handleJoin(e) {
     e.preventDefault();
     const code = joinCode.trim().toUpperCase();
-    if (!/^[A-Z]{2}-[0-9]{4}$/.test(code)) { setJoinError('Enter a valid code (e.g. AB-1234)'); return; }
+    if (!/^[A-Z0-9]{2}-[A-Z0-9]{4}$/.test(code)) { setJoinError('Enter a valid code (e.g. AB-1234)'); return; }
     setJoining(true);
     setJoinError('');
     try {

@@ -90,4 +90,4 @@ export const deleteRoomCue = (code, cueId) =>
 
 // Room settings persistence
 export const saveRoomSettings = (code, settings) =>
-  request(`/api/rooms/${code}`, { method: 'PATCH', body: { settings } });
+  request(`/api/rooms/${code}/settings`, { method: 'PUT', body: { settings } });

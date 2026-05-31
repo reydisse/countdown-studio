@@ -117,6 +117,13 @@ export function useWebSocket() {
             break;
           case EV.SETTINGS_CHANGED:
             useSettingsStore.getState().applyFromServer(payload);
+            // Merge asset URLs into the media store so image/video layers can render
+            if (payload.assetUrls && typeof payload.assetUrls === 'object') {
+              const mediaStore = useMediaStore.getState();
+              for (const [id, info] of Object.entries(payload.assetUrls)) {
+                if (info?.url) mediaStore._add({ id, url: info.url, type: info.type ?? 'image' });
+              }
+            }
             break;
         }
       };

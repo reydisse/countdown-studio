@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { useWebSocket }    from '../../hooks/useWebSocket.js';
 import { useRoomStore }    from '../../stores/roomStore.js';
+import { useSettingsStore } from '../../stores/settingsStore.js';
+import { useMediaStore }   from '../../stores/mediaStore.js';
 import { getRoom }         from '../../adapter/index.js';
 import { BgLayer }         from './BgLayer.jsx';
 import { VideoLayer }      from './VideoLayer.jsx';
@@ -52,7 +54,17 @@ export function OutputPage() {
     const code = new URLSearchParams(window.location.search).get('room');
     if (!code) { setReady(true); return; }
     getRoom(code)
-      .then(room => { useRoomStore.getState().setRoom(room); setReady(true); })
+      .then(room => {
+        useRoomStore.getState().setRoom(room);
+        // Apply persisted settings as a baseline (WS will override once studio connects)
+        try {
+          const saved = JSON.parse(room.settings_json || '{}');
+          if (Object.keys(saved).length) useSettingsStore.getState().applyFromServer(saved);
+        } catch {}
+        // Populate media store so image/video layers can render
+        useMediaStore.getState().fetchAll();
+        setReady(true);
+      })
       .catch(() => setReady(true));
   }, []);
 

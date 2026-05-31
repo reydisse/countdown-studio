@@ -11,6 +11,7 @@ export class RoomObject implements DurableObject {
   private cues: RoomCue[] = []
   private currentScript: { scriptId: string; content: string } | null = null
   private displaySettings: Record<string, unknown> | null = null
+  private roomSettings: Record<string, unknown> | null = null
   private heartbeatTimer: ReturnType<typeof setInterval> | null = null
   private state: DurableObjectState
   private env: Bindings
@@ -113,7 +114,7 @@ export class RoomObject implements DurableObject {
         this.registerWithRegistry(code)
         ws.send(JSON.stringify({
           type: 'room:joined',
-          payload: { timer: this.timer.getState(), prompter: this.prompter.getState(), cues: this.cues, script: this.currentScript, display: this.displaySettings },
+          payload: { timer: this.timer.getState(), prompter: this.prompter.getState(), cues: this.cues, script: this.currentScript, display: this.displaySettings, settings: this.roomSettings },
         }))
         break
       }
@@ -143,6 +144,17 @@ export class RoomObject implements DurableObject {
         const { scriptId, content } = payload as { scriptId: string; content: string }
         this.currentScript = { scriptId, content }
         this.broadcast('prompter:script', { scriptId, content })
+        break
+      }
+      case 'settings:update': {
+        this.roomSettings = payload as Record<string, unknown>
+        // Broadcast to all other sessions so output pages stay in sync
+        const settingsMsg = JSON.stringify({ type: 'settings:changed', payload })
+        for (const s of this.sessions) {
+          if (s !== ws) {
+            try { s.send(settingsMsg) } catch { /* ignore dead sockets */ }
+          }
+        }
         break
       }
       case 'room:leave':

@@ -50,6 +50,7 @@ function MainApp() {
   // ── Push settings to server via WS so all clients stay in sync ────────────
   useEffect(() => {
     let timer    = null;
+    let saveTimer = null;
     let lastHash = '';
 
     function buildPayload() {
@@ -77,13 +78,19 @@ function MainApp() {
         if (hash === lastHash) return;
         lastHash = hash;
         send('settings:update', payload);
+        // Persist to DB with a longer debounce so the output page can load
+        // settings even when the studio isn't open
+        clearTimeout(saveTimer);
+        saveTimer = setTimeout(() => {
+          useSettingsStore.getState().saveToRoom().catch(() => {});
+        }, 2000);
       }, 300);
     }
 
     sync();
     const unsubS = useSettingsStore.subscribe(sync);
     const unsubM = useMediaStore.subscribe(sync);
-    return () => { clearTimeout(timer); unsubS(); unsubM(); };
+    return () => { clearTimeout(timer); clearTimeout(saveTimer); unsubS(); unsubM(); };
   }, []);
 
   // ── End-behaviour ─────────────────────────────────────────────────────────

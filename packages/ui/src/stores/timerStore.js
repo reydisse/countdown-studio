@@ -8,6 +8,7 @@ const EV = {
   STOP:  'timer:stop',
   RESET: 'timer:reset',
   SET:   'timer:set',
+  SEEK:  'timer:seek',
 };
 
 export const useTimerStore = create(() => ({
@@ -35,4 +36,6 @@ export const useTimerStore = create(() => ({
     const s = seconds % 60;
     send(EV.SET, { h, m, s });
   },
+  // Jump to a position without changing the total (plan-mode "play from here")
+  seek: (seconds) => send(EV.SEEK, { remaining: seconds }),
 }));

@@ -27,9 +27,10 @@ export function Timeline({ cues, onCueEdit, onCueDelete, onCueCreate, onCommitMo
   const remaining = useTimerStore(s => s.remaining);
   const total     = useTimerStore(s => s.total);
 
-  const scrubAt   = useCueStore(s => s.scrubAt);
-  const scrubTo   = useCueStore(s => s.scrubTo);
-  const endScrub  = useCueStore(s => s.endScrub);
+  const scrubAt       = useCueStore(s => s.scrubAt);
+  const scrubTo       = useCueStore(s => s.scrubTo);
+  const endScrub      = useCueStore(s => s.endScrub);
+  const playFromScrub = useCueStore(s => s.playFromScrub);
 
   const outerRef   = useRef(null);
   const [outerW, setOuterW] = useState(900);
@@ -201,20 +202,29 @@ export function Timeline({ cues, onCueEdit, onCueDelete, onCueCreate, onCommitMo
 
       </div>
 
-      {/* ── Preview pill — exits scrub mode ─────────────────────────── */}
+      {/* ── Preview pills — play from here / exit scrub ─────────────── */}
       {scrubAt !== null && (
-        <div className="sticky left-0 bottom-1 z-30 flex justify-end pr-2 -mt-7 pointer-events-none">
+        <div className="sticky left-0 bottom-1 z-30 flex justify-end gap-1.5 pr-2 -mt-7 pointer-events-none">
+          <button
+            type="button"
+            onClick={playFromScrub}
+            className="pointer-events-auto flex items-center gap-1.5 px-2.5 py-1 rounded-full
+              text-[11px] font-mono shadow-lg border transition-colors
+              bg-accent border-accent text-black hover:brightness-110"
+            title="Start the live timer from this point"
+          >
+            ▶ Play from {fmt(scrubAt)}
+          </button>
           <button
             type="button"
             onClick={endScrub}
             className="pointer-events-auto flex items-center gap-1.5 px-2.5 py-1 rounded-full
               text-[11px] font-mono shadow-lg border transition-colors
-              bg-surface-overlay border-border-strong text-text-primary hover:border-accent"
+              bg-surface-overlay border-border-strong hover:border-accent"
             style={{ color: '#4aa3f5' }}
             title="Return the preview to live state"
           >
-            ◉ Preview {fmt(scrubAt)}
-            <span className="text-text-muted">— back to live ✕</span>
+            back to live ✕
           </button>
         </div>
       )}

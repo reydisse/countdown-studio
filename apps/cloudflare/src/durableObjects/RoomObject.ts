@@ -127,6 +127,11 @@ export class RoomObject implements DurableObject {
         await this.timer.setTime(Number(h), Number(m), Number(s))
         break
       }
+      case 'timer:seek': {
+        const { remaining = 0 } = payload as { remaining?: number }
+        await this.timer.seek(Number(remaining))
+        break
+      }
       case 'prompter:play':  await this.prompter.play();  await this.scheduleAlarm(); break
       case 'prompter:pause': await this.prompter.pause(); break
       case 'prompter:stop':  await this.prompter.stop();  break

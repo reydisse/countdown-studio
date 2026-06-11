@@ -272,4 +272,18 @@ export const useCueStore = create((set, get) => ({
     }
     set({ scrubAt: null });
   },
+
+  // Exit scrub mode but KEEP the replayed cue state, then start the live
+  // timer from the scrub position. The output looks exactly like the preview
+  // did, and cues later in the plan still fire at their normal times.
+  playFromScrub: () => {
+    const at = get().scrubAt;
+    if (at === null) return;
+    scrubBaseline = null; // discard — preview state becomes the live state
+    useSettingsStore.setState({ _previewRemaining: null });
+    set({ scrubAt: null });
+    useTimerStore.setState({ remaining: at }); // optimistic; server tick confirms
+    useTimerStore.getState().seek(at);
+    useTimerStore.getState().play();
+  },
 }));

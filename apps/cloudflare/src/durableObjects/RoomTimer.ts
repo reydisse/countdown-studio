@@ -86,6 +86,21 @@ export class RoomTimer {
     this.broadcast('timer:tick', this.getState())
   }
 
+  // Jump to a position without changing totalSeconds (plan-mode "play from here").
+  // Must also sync state.remaining — tick() scans the range it crossed since the
+  // last tick, so a stale remaining would re-fire every cue between the old
+  // position and the seek target in one burst.
+  async seek(seconds: number): Promise<void> {
+    const target = Math.max(0, Math.min(this.state.totalSeconds, Math.floor(seconds)))
+    this.state.pausedRemaining = target
+    this.state.remaining = target
+    if (this.state.running) {
+      this.state.endsAt = Date.now() + target * 1000
+    }
+    await this.maybePersist(true)
+    this.broadcast('timer:tick', this.getState())
+  }
+
   async tick(cues: RoomCue[]): Promise<boolean> {
     if (!this.state.running) return false
     const prevRemaining = this.state.remaining

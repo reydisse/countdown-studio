@@ -23,13 +23,9 @@ sudo apt update && sudo apt install -y cloudflared
 ## Step 1 — Copy files to the server
 
 ```bash
-# Option A: clone from git
-git clone <your-repo-url> /opt/showstack
+# Clone the repo
+git clone https://github.com/reydisse/countdown-studio /opt/showstack
 cd /opt/showstack
-
-# Option B: rsync from local machine
-rsync -avz --exclude node_modules --exclude .git \
-  /path/to/countdown-studio/ user@your-server:/opt/showstack/
 ```
 
 ---

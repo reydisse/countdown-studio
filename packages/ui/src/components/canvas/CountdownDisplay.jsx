@@ -18,8 +18,14 @@ function fmt(secs) {
 }
 
 export function CountdownDisplay() {
-  const remaining = useTimerStore(s => s.remaining);
-  const status    = useTimerStore(s => s.status);
+  const liveRemaining = useTimerStore(s => s.remaining);
+  const liveStatus    = useTimerStore(s => s.status);
+
+  // Plan-mode scrub preview: render the scrubbed time as if running so the
+  // warn/danger colours show exactly what the output will look like then.
+  const previewRemaining = useSettingsStore(s => s._previewRemaining);
+  const remaining = previewRemaining ?? liveRemaining;
+  const status    = previewRemaining != null ? 'running' : liveStatus;
 
   const font             = useSettingsStore(s => s.font);
   const textColor        = useSettingsStore(s => s.textColor);

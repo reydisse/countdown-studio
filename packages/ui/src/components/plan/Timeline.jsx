@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTimerStore }    from '../../stores/timerStore.js';
+import { useCueStore }      from '../../stores/cueStore.js';
 import { CuePoint }         from './CuePoint.jsx';
 
 function fmt(secs) {
@@ -26,6 +27,10 @@ export function Timeline({ cues, onCueEdit, onCueDelete, onCueCreate, onCommitMo
   const remaining = useTimerStore(s => s.remaining);
   const total     = useTimerStore(s => s.total);
 
+  const scrubAt   = useCueStore(s => s.scrubAt);
+  const scrubTo   = useCueStore(s => s.scrubTo);
+  const endScrub  = useCueStore(s => s.endScrub);
+
   const outerRef   = useRef(null);
   const [outerW, setOuterW] = useState(900);
 
@@ -37,6 +42,9 @@ export function Timeline({ cues, onCueEdit, onCueDelete, onCueCreate, onCommitMo
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
+
+  // Leaving plan mode always returns the preview to live state
+  useEffect(() => () => useCueStore.getState().endScrub(), []);
 
   // Adaptive px/sec: always fill the outer width, max 24px/s
   const pxPerSec  = total > 0 ? Math.min(24, outerW / total) : 1;
@@ -54,6 +62,25 @@ export function Timeline({ cues, onCueEdit, onCueDelete, onCueCreate, onCommitMo
       markers.push({ elap, rem: total - elap, x: elap * pxPerSec });
     }
   }
+
+  // Pointer x → remaining-seconds at that position
+  const remAtPointer = useCallback((clientX) => {
+    const rect = outerRef.current.getBoundingClientRect();
+    const x    = clientX - rect.left + outerRef.current.scrollLeft;
+    return Math.max(0, Math.min(total, Math.round(total - x / pxPerSec)));
+  }, [total, pxPerSec]);
+
+  // Drag on the ruler → scrub the preview to that point in the plan
+  const handleRulerDown = useCallback((e) => {
+    e.preventDefault();
+    e.currentTarget.setPointerCapture(e.pointerId);
+    scrubTo(remAtPointer(e.clientX));
+  }, [remAtPointer, scrubTo]);
+
+  const handleRulerMove = useCallback((e) => {
+    if (e.buttons !== 1) return;
+    scrubTo(remAtPointer(e.clientX));
+  }, [remAtPointer, scrubTo]);
 
   // Click on track background → create cue
   const handleTrackClick = useCallback((e) => {
@@ -82,15 +109,18 @@ export function Timeline({ cues, onCueEdit, onCueDelete, onCueCreate, onCommitMo
       {/* Inner content — wider than viewport when needed */}
       <div className="relative" style={{ width: innerW, height: RULER_H + TRACK_H + 16 }}>
 
-        {/* ── Ruler ─────────────────────────────────────────────────── */}
+        {/* ── Ruler — drag to scrub the preview ─────────────────────── */}
         <div
-          className="absolute top-0 left-0 right-0 bg-surface-elevated border-b border-border-subtle"
-          style={{ height: RULER_H }}
+          className="absolute top-0 left-0 right-0 bg-surface-elevated border-b border-border-subtle cursor-ew-resize"
+          style={{ height: RULER_H, touchAction: 'none' }}
+          onPointerDown={handleRulerDown}
+          onPointerMove={handleRulerMove}
+          title="Drag to preview the plan at any point"
         >
           {markers.map(({ elap, rem, x }) => (
             <div
               key={elap}
-              className="absolute flex flex-col items-center"
+              className="absolute flex flex-col items-center pointer-events-none"
               style={{ left: x, top: 0, transform: 'translateX(-50%)' }}
             >
               <div className="w-px bg-border-default" style={{ height: RULER_H * 0.4 }} />
@@ -130,7 +160,7 @@ export function Timeline({ cues, onCueEdit, onCueDelete, onCueCreate, onCommitMo
           ))}
         </div>
 
-        {/* ── Playhead ──────────────────────────────────────────────── */}
+        {/* ── Playhead (live) ───────────────────────────────────────── */}
         <div
           className="absolute top-0 pointer-events-none z-10"
           style={{ left: playheadLeft, height: RULER_H + TRACK_H + 16 }}
@@ -149,7 +179,45 @@ export function Timeline({ cues, onCueEdit, onCueDelete, onCueCreate, onCommitMo
           />
         </div>
 
+        {/* ── Scrub playhead (preview) ──────────────────────────────── */}
+        {scrubAt !== null && (
+          <div
+            className="absolute top-0 pointer-events-none z-20"
+            style={{ left: (total - scrubAt) * pxPerSec, height: RULER_H + TRACK_H + 16 }}
+          >
+            <div className="w-px h-full" style={{ background: '#4aa3f5' }} />
+            <div
+              className="absolute -left-[5px]"
+              style={{
+                top: RULER_H - 6,
+                width: 0, height: 0,
+                borderLeft:  '5px solid transparent',
+                borderRight: '5px solid transparent',
+                borderTop:   '6px solid #4aa3f5',
+              }}
+            />
+          </div>
+        )}
+
       </div>
+
+      {/* ── Preview pill — exits scrub mode ─────────────────────────── */}
+      {scrubAt !== null && (
+        <div className="sticky left-0 bottom-1 z-30 flex justify-end pr-2 -mt-7 pointer-events-none">
+          <button
+            type="button"
+            onClick={endScrub}
+            className="pointer-events-auto flex items-center gap-1.5 px-2.5 py-1 rounded-full
+              text-[11px] font-mono shadow-lg border transition-colors
+              bg-surface-overlay border-border-strong text-text-primary hover:border-accent"
+            style={{ color: '#4aa3f5' }}
+            title="Return the preview to live state"
+          >
+            ◉ Preview {fmt(scrubAt)}
+            <span className="text-text-muted">— back to live ✕</span>
+          </button>
+        </div>
+      )}
     </div>
   );
 }

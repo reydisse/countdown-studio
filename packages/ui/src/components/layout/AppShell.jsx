@@ -5,6 +5,7 @@ import { useSettingsStore } from '../../stores/settingsStore.js';
 import { useMediaStore }    from '../../stores/mediaStore.js';
 import { useTimerStore }    from '../../stores/timerStore.js';
 import { useRoomStore }     from '../../stores/roomStore.js';
+import { useCueStore }      from '../../stores/cueStore.js';
 import { PreviewCanvas }   from '../canvas/PreviewCanvas.jsx';
 import { OutputPage }      from '../canvas/OutputPage.jsx';
 import { Sidebar }         from '../sidebar/Sidebar.jsx';
@@ -73,6 +74,8 @@ function MainApp() {
     function sync() {
       clearTimeout(timer);
       timer = setTimeout(() => {
+        // Scrub preview is local-only — never broadcast or persist it
+        if (useCueStore.getState().scrubAt !== null) return;
         const payload = buildPayload();
         const hash    = JSON.stringify(payload);
         if (hash === lastHash) return;

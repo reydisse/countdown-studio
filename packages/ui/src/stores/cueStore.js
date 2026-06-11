@@ -164,11 +164,46 @@ function dispatchCueAction(action) {
   }
 }
 
+// ── Scrub preview (plan mode) ────────────────────────────────────────────────
+// While scrubbing, fired cue actions are replayed into the local stores only.
+// AppShell skips the WS settings sync while `scrubAt` is non-null, so the
+// live output and other clients never see preview state.
+
+let scrubBaseline = null;
+
+// Actions that are transient (sounds, animations) or control the shared
+// timer — meaningless or harmful to replay while previewing.
+const PREVIEW_SKIP = new Set([
+  'PLAY_AUDIO', 'play_audio', 'TIMER_PLAY', 'TIMER_PAUSE',
+  'FLASH_SCREEN', 'flash', 'ZOOM_IN', 'SLIDESHOW_NEXT', 'SLIDESHOW_PREV',
+]);
+
+function applyActionForPreview(action) {
+  switch (action.type) {
+    // Show the scrim's end state instantly — no animated transition
+    case 'FADE_TO_BLACK':
+    case 'CUT_TO_BLACK':
+      useSettingsStore.setState({
+        _scrimColor: action.payload?.color ?? '#000000',
+        _scrimTransition: 0,
+        _scrimOpacity: 1,
+      });
+      return;
+    case 'FADE_FROM_BLACK':
+    case 'CUT_FROM_BLACK':
+      useSettingsStore.setState({ _scrimTransition: 0, _scrimOpacity: 0 });
+      return;
+    default:
+      if (!PREVIEW_SKIP.has(action.type)) dispatchCueAction(action);
+  }
+}
+
 // ── Store ────────────────────────────────────────────────────────────────────
 
 export const useCueStore = create((set, get) => ({
   activeProjectId: null,
   cues: [], // Cue[] sorted by order_index
+  scrubAt: null, // remaining-seconds the plan preview is parked at; null = live
 
   // ── Load project — syncs server cueEngine and local state ─────────────────
   load: (projectId) => {
@@ -197,8 +232,44 @@ export const useCueStore = create((set, get) => ({
 
   // ── Called by useWebSocket on SERVER_EVENTS.CUE_FIRED ─────────────────────
   executeCueActions: (cue) => {
+    // Never let a live cue clobber the preview while scrubbing
+    if (get().scrubAt !== null) return;
     for (const action of cue.actions ?? []) {
       dispatchCueAction(action);
     }
+  },
+
+  // ── Scrub preview ──────────────────────────────────────────────────────────
+  scrubTo: (remaining) => {
+    const settings = useSettingsStore.getState();
+    if (scrubBaseline === null) {
+      scrubBaseline = {};
+      for (const [k, v] of Object.entries(settings)) {
+        if (typeof v !== 'function') scrubBaseline[k] = v;
+      }
+    }
+    // Reset to the pre-scrub baseline, then replay every cue that has
+    // already fired by this point. Cues fire as `remaining` counts down to
+    // `trigger_at`, so fired = trigger_at >= scrub position, in firing order.
+    useSettingsStore.setState({
+      ...scrubBaseline,
+      _scrimTransition: 0,
+      _previewRemaining: remaining,
+    });
+    const fired = get().cues
+      .filter(c => c.trigger_at >= remaining)
+      .sort((a, b) => b.trigger_at - a.trigger_at);
+    for (const cue of fired) {
+      for (const action of cue.actions ?? []) applyActionForPreview(action);
+    }
+    set({ scrubAt: remaining });
+  },
+
+  endScrub: () => {
+    if (scrubBaseline !== null) {
+      useSettingsStore.setState({ ...scrubBaseline, _previewRemaining: null });
+      scrubBaseline = null;
+    }
+    set({ scrubAt: null });
   },
 }));

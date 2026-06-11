@@ -2,6 +2,9 @@ import { create } from 'zustand';
 import { getRoomAssets, uploadRoomAsset, deleteRoomAsset } from '../adapter/index.js';
 import { useRoomStore } from './roomStore.js';
 
+// API rows use snake_case (thumbnail_url); components read camelCase.
+const normalize = (a) => ({ ...a, thumbnailUrl: a.thumbnailUrl ?? a.thumbnail_url ?? null });
+
 export const useMediaStore = create((set, get) => ({
   assets:    {}, // Record<id, Asset>
   uploading: false,
@@ -14,7 +17,7 @@ export const useMediaStore = create((set, get) => ({
     set({ error: null });
     try {
       const list   = await getRoomAssets(code, type);
-      const assets = Object.fromEntries(list.map(a => [a.id, a]));
+      const assets = Object.fromEntries(list.map(a => [a.id, normalize(a)]));
       set({ assets });
     } catch (err) {
       set({ error: err.message });
@@ -27,7 +30,7 @@ export const useMediaStore = create((set, get) => ({
     if (!code) throw new Error('No active room');
     set({ uploading: true, error: null });
     try {
-      const asset = await uploadRoomAsset(code, fileOrPath);
+      const asset = normalize(await uploadRoomAsset(code, fileOrPath));
       set(state => ({ assets: { ...state.assets, [asset.id]: asset }, uploading: false }));
       return asset;
     } catch (err) {
@@ -51,7 +54,7 @@ export const useMediaStore = create((set, get) => ({
   },
 
   // ── WS push handlers ───────────────────────────────────────────────────────
-  _add:    (asset) => set(state => ({ assets: { ...state.assets, [asset.id]: asset } })),
+  _add:    (asset) => set(state => ({ assets: { ...state.assets, [asset.id]: normalize(asset) } })),
   _remove: (id)   => set(state => {
     const { [id]: _, ...rest } = state.assets;
     return { assets: rest };

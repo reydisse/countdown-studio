@@ -3,6 +3,7 @@ import { useMediaStore }    from '../../stores/mediaStore.js';
 import { Button }           from '../shared/Button.jsx';
 import { Slider }           from '../shared/Slider.jsx';
 import { ColorPicker }      from '../shared/ColorPicker.jsx';
+import { AssetThumb }       from '../shared/AssetThumb.jsx';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const ACTION_TYPES = [
@@ -108,10 +109,7 @@ function AssetMiniPicker({ value, assets, onChange }) {
           className={`aspect-square rounded overflow-hidden border-2 transition-colors
             ${value === a.id ? 'border-accent' : 'border-transparent hover:border-border-strong'}`}
         >
-          {a.thumbnailUrl
-            ? <img src={a.thumbnailUrl} className="w-full h-full object-cover" alt="" />
-            : <div className="w-full h-full bg-surface-overlay flex items-center justify-center text-[8px] text-text-muted px-0.5 truncate">{a.name}</div>
-          }
+          <AssetThumb asset={a} className="w-full h-full object-cover pointer-events-none" />
         </button>
       ))}
     </div>

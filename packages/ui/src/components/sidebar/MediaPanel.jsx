@@ -2,14 +2,12 @@ import { useEffect, useState } from 'react';
 import { useMediaStore }  from '../../stores/mediaStore.js';
 import { SidebarSection } from './SidebarSection.jsx';
 import { Button }         from '../shared/Button.jsx';
+import { AssetThumb }     from '../shared/AssetThumb.jsx';
 import { openFilePicker } from '../../adapter/index.js';
 
 // ── Single asset card ────────────────────────────────────────────────────────
 function AssetCard({ asset, onDelete }) {
   const [confirming, setConfirming] = useState(false);
-
-  const hasThumbnail = !!asset.thumbnailUrl;
-  const isAudio      = asset.type === 'audio';
 
   // Friendly file-size label
   function fmtSize(bytes) {
@@ -22,27 +20,7 @@ function AssetCard({ asset, onDelete }) {
     <div className="group rounded-md overflow-hidden border border-border-default bg-surface-elevated flex flex-col">
       {/* Thumbnail */}
       <div className="relative aspect-video bg-surface-overlay">
-        {hasThumbnail ? (
-          <img
-            src={asset.thumbnailUrl}
-            alt={asset.name}
-            className="w-full h-full object-cover"
-            draggable={false}
-          />
-        ) : asset.url && !isAudio ? (
-          <img
-            src={asset.url}
-            alt={asset.name}
-            className="w-full h-full object-cover"
-            draggable={false}
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center text-text-muted">
-            {isAudio
-              ? <span className="text-2xl">♫</span>
-              : <span className="text-2xl opacity-40">▶</span>}
-          </div>
-        )}
+        <AssetThumb asset={asset} className="w-full h-full object-cover" />
 
         {/* Type badge */}
         <span className="absolute top-0.5 left-0.5 text-[8px] uppercase tracking-wider

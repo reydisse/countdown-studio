@@ -70,6 +70,8 @@ const DEFAULTS = {
   _zoomCount:    0,   // incremented to trigger the animation
   _zoomScale:    1.8, // starting scale multiplier
   _zoomDuration: 2000,// ms
+  // Plan-mode scrub preview — when non-null the countdown renders this value
+  _previewRemaining: null,
 };
 
 // Keys excluded from project persistence
@@ -77,6 +79,7 @@ const RUNTIME_KEYS = new Set([
   '_flashCount', '_slideshowActiveIndex', '_slideshowCount', '_slideshowGoTo',
   '_scrimOpacity', '_scrimColor', '_scrimTransition',
   '_zoomCount', '_zoomScale', '_zoomDuration',
+  '_previewRemaining',
 ]);
 
 export const useSettingsStore = create((set, get) => ({

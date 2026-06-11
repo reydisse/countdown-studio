@@ -1,42 +1,31 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useCueStore }   from '../../stores/cueStore.js';
-import { send }          from '../../wsClient.js';
+import { useRoomStore }  from '../../stores/roomStore.js';
 import {
-  getProjects, saveProject,
-  getCues, createCue, updateCue, deleteCue,
+  getRoomCues, createRoomCue, updateRoomCue, deleteRoomCue,
 } from '../../adapter/index.js';
 import { PreviewCanvas } from '../canvas/PreviewCanvas.jsx';
 import { Timeline }      from './Timeline.jsx';
 import { CueList }       from './CueList.jsx';
 import { CueEditor }     from './CueEditor.jsx';
 
-const LOAD_PROJECT = 'project:load';
-
-async function ensureProject() {
-  const projects = await getProjects();
-  if (projects.length > 0) return projects[0].id;
-  const p = await saveProject({ name: 'Default Project', settings: {} });
-  return p.id;
-}
-
 export function PlanView({ slideshowRef }) {
-  const activeProjectId = useCueStore(s => s.activeProjectId);
-  const storeLload      = useCueStore(s => s.load);
-  const storeSetCues    = useCueStore(s => s.setCues);
+  // Cues are scoped to the active room — never another project/room.
+  const roomCode     = useRoomStore(s => s.room?.code ?? null);
+  const storeSetCues = useCueStore(s => s.setCues);
   const cues = useCueStore(s => s.cues);
 
   const [selectedCue, setSelectedCue] = useState(null);
   const [saving,      setSaving]      = useState(false);
 
-  // ── Bootstrap: ensure there is an active project ─────────────────────────
+  // ── Bootstrap: load the active room's cues ───────────────────────────────
   useEffect(() => {
+    if (!roomCode) return;
     let cancelled = false;
     (async () => {
       try {
-        const pid  = await ensureProject();
-        if (cancelled) return;
-        storeLload(pid);
-        const list = await getCues(pid);
+        useCueStore.setState({ activeProjectId: roomCode });
+        const list = await getRoomCues(roomCode);
         if (cancelled) return;
         // Parse actions_json → actions (DB field vs client field)
         storeSetCues(list.map(c => ({
@@ -48,12 +37,12 @@ export function PlanView({ slideshowRef }) {
       }
     })();
     return () => { cancelled = true; };
-  }, []);
+  }, [roomCode]);
 
   // ── Cue CRUD helpers ─────────────────────────────────────────────────────
   const handleCreate = useCallback(async (triggerAt, label = 'New Cue') => {
-    if (!activeProjectId) return;
-    const cue = await createCue(activeProjectId, {
+    if (!roomCode) return;
+    const cue = await createRoomCue(roomCode, {
       trigger_at: triggerAt,
       label,
       actions:    [],
@@ -62,13 +51,13 @@ export function PlanView({ slideshowRef }) {
     const parsed = { ...cue, actions: (() => { try { return JSON.parse(cue.actions_json ?? '[]') } catch { return [] } })() };
     useCueStore.getState().add(parsed);
     setSelectedCue(parsed);
-  }, [activeProjectId]);
+  }, [roomCode]);
 
   const handleSave = useCallback(async (cueId, data) => {
-    if (!activeProjectId) return;
+    if (!roomCode) return;
     setSaving(true);
     try {
-      const updated = await updateCue(activeProjectId, cueId, data);
+      const updated = await updateRoomCue(roomCode, cueId, data);
       // Use the server response if it's a full cue object, otherwise merge sent data
       const merged = (updated && updated.id) ? updated : data;
       useCueStore.getState().update(cueId, merged);
@@ -76,37 +65,37 @@ export function PlanView({ slideshowRef }) {
     } finally {
       setSaving(false);
     }
-  }, [activeProjectId]);
+  }, [roomCode]);
 
   const handleDelete = useCallback(async (cueId) => {
-    if (!activeProjectId) return;
+    if (!roomCode) return;
     // Optimistic removal
     useCueStore.getState().remove(cueId);
     setSelectedCue(null);
     try {
-      await deleteCue(activeProjectId, cueId);
+      await deleteRoomCue(roomCode, cueId);
     } catch (err) {
       console.error('Delete cue failed:', err);
       // Reload to restore correct state on failure
       try {
-        const list = await getCues(activeProjectId);
+        const list = await getRoomCues(roomCode);
         useCueStore.getState().setCues(list.map(c => ({
           ...c,
           actions: (() => { try { return JSON.parse(c.actions_json ?? '[]') } catch { return [] } })(),
         })));
       } catch { /* ignore */ }
     }
-  }, [activeProjectId]);
+  }, [roomCode]);
 
   // Drag-and-drop move on the timeline
   const handleCommitMove = useCallback(async (cueId, newTriggerAt) => {
-    if (!activeProjectId) return;
+    if (!roomCode) return;
     const cue = useCueStore.getState().cues.find(c => c.id === cueId);
     if (!cue) return;
     // Optimistically update position so it doesn't snap back
     useCueStore.getState().update(cueId, { trigger_at: newTriggerAt });
     try {
-      await updateCue(activeProjectId, cueId, {
+      await updateRoomCue(roomCode, cueId, {
         trigger_at: newTriggerAt,
         label:      cue.label,
         // Don't send actions on a position-only move — avoids accidentally overwriting
@@ -115,7 +104,7 @@ export function PlanView({ slideshowRef }) {
       console.error('Move cue failed:', err);
       useCueStore.getState().update(cueId, { trigger_at: cue.trigger_at });
     }
-  }, [activeProjectId]);
+  }, [roomCode]);
 
   return (
     // relative so CueEditor can be absolutely positioned within

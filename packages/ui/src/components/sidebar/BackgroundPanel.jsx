@@ -6,6 +6,7 @@ import { TabGroup }         from '../shared/TabGroup.jsx';
 import { Button }           from '../shared/Button.jsx';
 import { ColorPicker }      from '../shared/ColorPicker.jsx';
 import { Slider }           from '../shared/Slider.jsx';
+import { AssetThumb }       from '../shared/AssetThumb.jsx';
 import { openFilePicker } from '../../adapter/index.js';
 import { useShallow }      from 'zustand/react/shallow';
 
@@ -43,10 +44,7 @@ function AssetPicker({ type, value, onChange }) {
             ${value === a.id ? 'border-accent' : 'border-transparent hover:border-border-strong'}
           `}
         >
-          {a.thumbnailUrl
-            ? <img src={a.thumbnailUrl} className="w-full h-full object-cover" alt={a.name} />
-            : <div className="w-full h-full bg-surface-overlay flex items-center justify-center text-[10px] text-text-muted truncate px-1">{a.name}</div>
-          }
+          <AssetThumb asset={a} className="w-full h-full object-cover pointer-events-none" />
         </button>
       ))}
     </div>
@@ -210,12 +208,7 @@ export function BackgroundPanel() {
                       ${dragSrc === i ? 'opacity-40 scale-95' : ''}
                     `}
                   >
-                    {a?.thumbnailUrl
-                      ? <img src={a.thumbnailUrl} className="w-full h-full object-cover pointer-events-none" alt="" draggable={false} />
-                      : a?.url
-                        ? <img src={a.url} className="w-full h-full object-cover pointer-events-none" alt="" draggable={false} />
-                        : <div className="w-full h-full bg-surface-overlay" />
-                    }
+                    <AssetThumb asset={a} className="w-full h-full object-cover pointer-events-none" />
                     {/* Remove on hover */}
                     <button
                       type="button"

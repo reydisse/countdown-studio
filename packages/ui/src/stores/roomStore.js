@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { getRoom } from '../adapter/index.js';
 
 const STORAGE_KEY = 'showstack_room';
 
@@ -13,14 +14,10 @@ export const useRoomStore = create((set, get) => ({
     if (!code) return;
     set({ loading: true });
     try {
-      const res = await fetch(`/api/rooms/${code}`);
-      if (res.ok) {
-        const room = await res.json();
-        set({ room, loading: false });
-      } else {
-        sessionStorage.removeItem(STORAGE_KEY);
-        set({ loading: false });
-      }
+      // Must go through the adapter so the request hits the API origin,
+      // not the static Pages host (which would return the SPA's index.html).
+      const room = await getRoom(code);
+      set({ room, loading: false });
     } catch {
       sessionStorage.removeItem(STORAGE_KEY);
       set({ loading: false });

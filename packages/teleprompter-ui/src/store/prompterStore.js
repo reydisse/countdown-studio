@@ -171,7 +171,7 @@ export const usePrompterStore = create((set, get) => ({
     send('prompter:settings', { totalHeight });
   },
 
-  _applyTick:    (payload) => set({ scrollPosition: payload.scrollPosition, isPlaying: payload.isPlaying, speed: payload.speed }),
+  _applyTick:    (payload) => set({ scrollPosition: payload.scrollPosition, isPlaying: payload.isPlaying, speed: payload.speed, totalHeight: payload.totalHeight }),
   _applyDisplay: (payload) => set(payload),
 
   addCue: (label, position) => {

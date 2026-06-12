@@ -86,8 +86,25 @@ export function ReaderView() {
   useEffect(() => {
     const el = contentRef.current;
     if (!el) return;
+    let prevHeight = 0;
     const observer = new ResizeObserver(() => {
-      usePrompterStore.getState().reportHeight(el.scrollHeight);
+      const newHeight = el.scrollHeight;
+      const container  = containerRef.current;
+
+      // Content reflowed (live script edit, font/width change, etc.) — rescale
+      // the scroll position proportionally so the reader stays at roughly the
+      // same point in the script instead of snapping to whatever now lands at
+      // the same pixel offset. Sync the corrected position back to the server
+      // (and other clients) via seekTo so the scroll engine doesn't snap back.
+      if (container && prevHeight > 0 && newHeight !== prevHeight) {
+        const newScrollTop = container.scrollTop * (newHeight / prevHeight);
+        container.scrollTop = newScrollTop;
+        usePrompterStore.setState({ scrollPosition: newScrollTop });
+        usePrompterStore.getState().seekTo(newScrollTop);
+      }
+
+      prevHeight = newHeight;
+      usePrompterStore.getState().reportHeight(newHeight);
     });
     observer.observe(el);
     return () => observer.disconnect();

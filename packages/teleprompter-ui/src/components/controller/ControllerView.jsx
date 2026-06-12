@@ -4,6 +4,7 @@ import { usePrompterWS }    from '../../hooks/usePrompterWS.js';
 import { TopBar }           from '../shared/TopBar.jsx';
 import { ScriptEditor }     from './ScriptEditor.jsx';
 import { SpeedControl }     from './SpeedControl.jsx';
+import { ProgressScrubber } from './ProgressScrubber.jsx';
 import { CueList }          from './CueList.jsx';
 
 export function ControllerView() {
@@ -78,6 +79,8 @@ export function ControllerView() {
           </div>
 
           <SpeedControl />
+
+          <ProgressScrubber />
 
           {/* Display settings */}
           <div className="border border-border-subtle rounded-lg overflow-hidden">

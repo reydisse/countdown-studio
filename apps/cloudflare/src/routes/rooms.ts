@@ -212,5 +212,8 @@ rooms.post('/:code/prompter/speed',      async (c) => forwardToDO(c.env, c.req.p
 rooms.post('/:code/prompter/speed/up',   async (c) => forwardToDO(c.env, c.req.param('code'), '/prompter/speed/up'))
 rooms.post('/:code/prompter/speed/down', async (c) => forwardToDO(c.env, c.req.param('code'), '/prompter/speed/down'))
 rooms.post('/:code/prompter/seek',       async (c) => forwardToDO(c.env, c.req.param('code'), '/prompter/seek', 'POST', await c.req.json()))
+rooms.post('/:code/prompter/seek/relative', async (c) => forwardToDO(c.env, c.req.param('code'), '/prompter/seek/relative', 'POST', await c.req.json()))
+rooms.post('/:code/prompter/scrub/start', async (c) => forwardToDO(c.env, c.req.param('code'), '/prompter/scrub/start', 'POST', await c.req.json()))
+rooms.post('/:code/prompter/scrub/stop',  async (c) => forwardToDO(c.env, c.req.param('code'), '/prompter/scrub/stop'))
 
 export default rooms

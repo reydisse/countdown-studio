@@ -56,6 +56,9 @@ prompter.post('/active/speed',        async (c) => forwardActive(c, '/prompter/s
 prompter.post('/active/speed/up',     (c) => forwardActive(c, '/prompter/speed/up'))
 prompter.post('/active/speed/down',   (c) => forwardActive(c, '/prompter/speed/down'))
 prompter.post('/active/seek',         async (c) => forwardActive(c, '/prompter/seek', 'POST', await c.req.json()))
+prompter.post('/active/seek/relative', async (c) => forwardActive(c, '/prompter/seek/relative', 'POST', await c.req.json()))
+prompter.post('/active/scrub/start',   async (c) => forwardActive(c, '/prompter/scrub/start', 'POST', await c.req.json()))
+prompter.post('/active/scrub/stop',    (c) => forwardActive(c, '/prompter/scrub/stop'))
 
 prompter.post('/active/cue/:cueId', async (c) => {
   const room = await getActiveRoom(c)

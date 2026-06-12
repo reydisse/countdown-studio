@@ -41,7 +41,7 @@ export class RoomObject implements DurableObject {
     const method = request.method
     const path = url.pathname
 
-    if (path === '/timer/play')   { await this.timer.play();   return Response.json(this.timer.getState()) }
+    if (path === '/timer/play')   { await this.timer.play();   await this.scheduleAlarm(); return Response.json(this.timer.getState()) }
     if (path === '/timer/pause')  { await this.timer.pause();  return Response.json(this.timer.getState()) }
     if (path === '/timer/stop')   { await this.timer.stop();   return Response.json(this.timer.getState()) }
     if (path === '/timer/reset')  { await this.timer.reset();  return Response.json(this.timer.getState()) }
@@ -52,7 +52,7 @@ export class RoomObject implements DurableObject {
       return Response.json(this.timer.getState())
     }
 
-    if (path === '/prompter/play')       { await this.prompter.play();                        return Response.json(this.prompter.getState()) }
+    if (path === '/prompter/play')       { await this.prompter.play();    await this.scheduleAlarm(); return Response.json(this.prompter.getState()) }
     if (path === '/prompter/pause')      { await this.prompter.pause();                       return Response.json(this.prompter.getState()) }
     if (path === '/prompter/stop')       { await this.prompter.stop();                        return Response.json(this.prompter.getState()) }
     if (path === '/prompter/state')      { await this.prompter.load();                        return Response.json(this.prompter.getState()) }
@@ -74,6 +74,21 @@ export class RoomObject implements DurableObject {
     if (path === '/prompter/seek' && method === 'POST') {
       const { position } = await request.json<{ position: number }>()
       await this.prompter.seekTo(position)
+      return Response.json(this.prompter.getState())
+    }
+    if (path === '/prompter/seek/relative' && method === 'POST') {
+      const { seconds } = await request.json<{ seconds: number }>()
+      await this.prompter.nudge(Number(seconds))
+      return Response.json(this.prompter.getState())
+    }
+    if (path === '/prompter/scrub/start' && method === 'POST') {
+      const { direction } = await request.json<{ direction: number }>()
+      await this.prompter.startScrub(Number(direction))
+      await this.scheduleAlarm()
+      return Response.json(this.prompter.getState())
+    }
+    if (path === '/prompter/scrub/stop' && method === 'POST') {
+      await this.prompter.stopScrub()
       return Response.json(this.prompter.getState())
     }
 

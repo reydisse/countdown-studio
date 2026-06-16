@@ -128,6 +128,22 @@ export const usePrompterStore = create((set, get) => ({
     }
   },
 
+  renameScript: async (id, name) => {
+    const code = get().room?.code;
+    const trimmed = name?.trim();
+    if (!code || !id || !trimmed) return;
+
+    const previous = get().scripts;
+    set({ scripts: previous.map(s => s.id === id ? { ...s, name: trimmed } : s) });
+
+    const res = await fetch(`${API}/api/rooms/${code}/scripts/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: trimmed }),
+    });
+    if (!res.ok) set({ scripts: previous });
+  },
+
   createScript: async (name) => {
     const code = get().room?.code;
     if (!code || !name) return;

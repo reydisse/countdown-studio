@@ -75,13 +75,24 @@ export function ReaderView() {
 
   useEffect(() => { usePrompterStore.getState().loadScripts(); }, []);
 
-  const {
-    content, cues,
-    fontSize, lineWidth, fontFamily, textColor, bgColor,
-    isMirrored, isFlippedVertical, showFocusLine, focusLinePosition,
-    play, pause, stop, setSpeed, speed, isPlaying,
-    updateDisplay,
-  } = usePrompterStore();
+  const content = usePrompterStore(s => s.content);
+  const cues = usePrompterStore(s => s.cues);
+  const fontSize = usePrompterStore(s => s.fontSize);
+  const lineWidth = usePrompterStore(s => s.lineWidth);
+  const fontFamily = usePrompterStore(s => s.fontFamily);
+  const textColor = usePrompterStore(s => s.textColor);
+  const bgColor = usePrompterStore(s => s.bgColor);
+  const isMirrored = usePrompterStore(s => s.isMirrored);
+  const isFlippedVertical = usePrompterStore(s => s.isFlippedVertical);
+  const showFocusLine = usePrompterStore(s => s.showFocusLine);
+  const focusLinePosition = usePrompterStore(s => s.focusLinePosition);
+  const play = usePrompterStore(s => s.play);
+  const pause = usePrompterStore(s => s.pause);
+  const stop = usePrompterStore(s => s.stop);
+  const setSpeed = usePrompterStore(s => s.setSpeed);
+  const speed = usePrompterStore(s => s.speed);
+  const isPlaying = usePrompterStore(s => s.isPlaying);
+  const updateDisplay = usePrompterStore(s => s.updateDisplay);
 
   useEffect(() => {
     const el = contentRef.current;
@@ -94,13 +105,13 @@ export function ReaderView() {
       // Content reflowed (live script edit, font/width change, etc.) — rescale
       // the scroll position proportionally so the reader stays at roughly the
       // same point in the script instead of snapping to whatever now lands at
-      // the same pixel offset. Sync the corrected position back to the server
-      // (and other clients) via seekTo so the scroll engine doesn't snap back.
+      // the same pixel offset. Do not send this as a seek: content edits and
+      // font changes can fire ResizeObserver repeatedly and would make the
+      // server fight normal playback.
       if (container && prevHeight > 0 && newHeight !== prevHeight) {
         const newScrollTop = container.scrollTop * (newHeight / prevHeight);
         container.scrollTop = newScrollTop;
         usePrompterStore.setState({ scrollPosition: newScrollTop });
-        usePrompterStore.getState().seekTo(newScrollTop);
       }
 
       prevHeight = newHeight;

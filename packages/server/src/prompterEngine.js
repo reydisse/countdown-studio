@@ -3,7 +3,8 @@
 const { SERVER_EVENTS } = require('@showstack/shared');
 
 const TICK_INTERVAL_MS = 50; // 20fps
-const SPEED_SCALE = [0, 20, 40, 65, 90, 120, 155, 195, 240, 270, 300]; // index = speed 0-10
+// px per tick — keep in sync with Cloudflare RoomPrompter and reader UI.
+const SPEED_PX = { 1:1, 2:2, 3:3, 4:4, 5:5, 6:7, 7:9, 8:11, 9:13, 10:15 };
 
 function createPrompterEngine(broadcast) {
   let scrollPosition = 0;
@@ -25,7 +26,7 @@ function createPrompterEngine(broadcast) {
   };
 
   function pxPerTick() {
-    return (SPEED_SCALE[speed] ?? 100) / (1000 / TICK_INTERVAL_MS);
+    return SPEED_PX[speed] ?? 3;
   }
 
   function tick() {

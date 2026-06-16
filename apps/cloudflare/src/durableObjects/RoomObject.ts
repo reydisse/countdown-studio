@@ -154,6 +154,9 @@ export class RoomObject implements DurableObject {
             } catch { /* keep existing */ }
           }
         }
+        if (this.timer.needsTicking() || this.prompter.needsTicking()) {
+          await this.scheduleAlarm()
+        }
         this.registerWithRegistry(code)
         ws.send(JSON.stringify({
           type: 'room:joined',
@@ -244,7 +247,9 @@ export class RoomObject implements DurableObject {
     this.sessions.delete(ws)
     if (this.roomCode) this.unregisterFromRegistry(this.roomCode)
     if (this.sessions.size === 0) {
-      await this.state.storage.deleteAlarm()
+      if (!this.timer.needsTicking() && !this.prompter.needsTicking()) {
+        await this.state.storage.deleteAlarm()
+      }
       if (this.heartbeatTimer) clearInterval(this.heartbeatTimer)
     }
   }

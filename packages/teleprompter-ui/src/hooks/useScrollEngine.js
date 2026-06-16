@@ -8,8 +8,9 @@ const SNAP_THRESHOLD = 200; // snap instead of lerp when this far off
 const LERP_FACTOR    = 0.22;
 
 export function useScrollEngine(containerRef) {
-  const rafRef  = useRef(null);
-  const lastRef = useRef(performance.now());
+  const rafRef      = useRef(null);
+  const lastRef     = useRef(performance.now());
+  const localPosRef = useRef(null);
 
   useEffect(() => {
     function loop() {
@@ -22,19 +23,24 @@ export function useScrollEngine(containerRef) {
         const { scrollPosition, isPlaying, speed } = usePrompterStore.getState();
 
         if (isPlaying) {
-          // Advance locally at 60fps — same rate as the server tick
+          // Advance locally at 60fps and only use server ticks for large
+          // corrections. Blending toward every 50ms server tick creates visible
+          // jitter because the browser and server clocks never line up exactly.
           const pxPerMs   = (SPEED_PX[speed] ?? 3) / SERVER_TICK_MS;
-          const localNext = el.scrollTop + pxPerMs * dt;
+          const base      = localPosRef.current ?? el.scrollTop;
+          const localNext = base + pxPerMs * dt;
           const drift     = scrollPosition - localNext;
 
           if (Math.abs(drift) > SNAP_THRESHOLD) {
             // Big drift (seek, resume after pause) — snap to server
             el.scrollTop = scrollPosition;
+            localPosRef.current = scrollPosition;
           } else {
-            // Smooth local advance, gently blend toward server position
-            el.scrollTop = localNext + drift * 0.05;
+            el.scrollTop = localNext;
+            localPosRef.current = localNext;
           }
         } else {
+          localPosRef.current = null;
           // Paused / stopped — follow server position for seeks
           const delta = scrollPosition - el.scrollTop;
           if (Math.abs(delta) > SNAP_THRESHOLD) {

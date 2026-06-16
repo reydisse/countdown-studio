@@ -1,7 +1,8 @@
 import { usePrompterStore } from '../../store/prompterStore.js';
 
 export function SpeedControl() {
-  const { speed, setSpeed } = usePrompterStore();
+  const speed = usePrompterStore(s => s.speed);
+  const setSpeed = usePrompterStore(s => s.setSpeed);
 
   return (
     <div className="flex flex-col gap-2 p-3 bg-surface-elevated rounded-lg border border-border-subtle">

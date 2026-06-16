@@ -1,7 +1,9 @@
 import { usePrompterStore } from '../../store/prompterStore.js';
 
 export function CueList() {
-  const { cues, jumpToCue, removeCue } = usePrompterStore();
+  const cues = usePrompterStore(s => s.cues);
+  const jumpToCue = usePrompterStore(s => s.jumpToCue);
+  const removeCue = usePrompterStore(s => s.removeCue);
 
   if (!cues.length) return null;
 

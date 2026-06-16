@@ -117,6 +117,10 @@ function getOrCreateEngine(code) {
 function scheduleEngineCleanup(code) {
   const handle = setTimeout(() => {
     const eng = roomEngines.get(code);
+    if (eng?.timer.getState().running) {
+      scheduleEngineCleanup(code);
+      return;
+    }
     if (eng) { eng.timer.destroy(); eng.prompter.destroy(); }
     roomEngines.delete(code);
     engineCleanupTimers.delete(code);
@@ -248,8 +252,6 @@ wss.on('connection', (socket, req) => {
     const remaining = broadcast.removeFromRoom(roomCode, socket);
     logger.info('Client left room', { code: roomCode, remaining, ip: clientIp });
     if (remaining === 0) {
-      const engine = roomEngines.get(roomCode);
-      if (engine) engine.timer.pause();
       scheduleEngineCleanup(roomCode);
     }
   });

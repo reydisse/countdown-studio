@@ -10,13 +10,26 @@ import { CueList }          from './CueList.jsx';
 export function ControllerView() {
   usePrompterWS();
 
-  const {
-    room, isPlaying, play, pause, stop,
-    scripts, activeScriptId, selectScript, createScript,
-    updateDisplay, wsConnected,
-    fontSize, lineWidth, fontFamily, textColor, bgColor,
-    isMirrored, isFlippedVertical, showFocusLine, focusLinePosition,
-  } = usePrompterStore();
+  const room = usePrompterStore(s => s.room);
+  const isPlaying = usePrompterStore(s => s.isPlaying);
+  const play = usePrompterStore(s => s.play);
+  const pause = usePrompterStore(s => s.pause);
+  const stop = usePrompterStore(s => s.stop);
+  const scripts = usePrompterStore(s => s.scripts);
+  const activeScriptId = usePrompterStore(s => s.activeScriptId);
+  const selectScript = usePrompterStore(s => s.selectScript);
+  const createScript = usePrompterStore(s => s.createScript);
+  const updateDisplay = usePrompterStore(s => s.updateDisplay);
+  const wsConnected = usePrompterStore(s => s.wsConnected);
+  const fontSize = usePrompterStore(s => s.fontSize);
+  const lineWidth = usePrompterStore(s => s.lineWidth);
+  const fontFamily = usePrompterStore(s => s.fontFamily);
+  const textColor = usePrompterStore(s => s.textColor);
+  const bgColor = usePrompterStore(s => s.bgColor);
+  const isMirrored = usePrompterStore(s => s.isMirrored);
+  const isFlippedVertical = usePrompterStore(s => s.isFlippedVertical);
+  const showFocusLine = usePrompterStore(s => s.showFocusLine);
+  const focusLinePosition = usePrompterStore(s => s.focusLinePosition);
 
   const [showSettings, setShowSettings] = useState(false);
 

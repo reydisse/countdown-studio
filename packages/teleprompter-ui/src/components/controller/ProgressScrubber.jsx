@@ -12,7 +12,10 @@ const HOLD_INTERVAL_MS  = 50;   // scrub step rate (matches server tick rate)
 const SCRUB_PX_PER_SEC  = 500;  // continuous scrub speed, independent of playback speed
 
 export function ProgressScrubber() {
-  const { scrollPosition, totalHeight, speed, seekTo } = usePrompterStore();
+  const scrollPosition = usePrompterStore(s => s.scrollPosition);
+  const totalHeight = usePrompterStore(s => s.totalHeight);
+  const speed = usePrompterStore(s => s.speed);
+  const seekTo = usePrompterStore(s => s.seekTo);
   const trackRef = useRef(null);
 
   // one hold-state per nudge button (left/back, right/forward)

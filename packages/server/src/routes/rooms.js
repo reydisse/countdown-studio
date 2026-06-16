@@ -185,6 +185,12 @@ router.post('/:code/prompter/seek', requireRoom, requirePrompterEngine, (req, re
 });
 
 router.post('/:code/prompter/cue/:cueId', requireRoom, requirePrompterEngine, (req, res) => {
+  const engine = req.app.get('getOrCreateEngine')(req.params.code);
+  const prompterCue = engine.prompterCues.findById(req.params.cueId);
+  if (prompterCue) {
+    req.prompter.seekTo(prompterCue.position);
+    return res.json({ status: 'ok', cueId: req.params.cueId, scrollPosition: prompterCue.position });
+  }
   const cue = roomDb.getCueById(req.params.cueId);
   if (!cue || cue.room_code !== req.params.code)
     return res.status(404).json({ error: 'cue not found' });

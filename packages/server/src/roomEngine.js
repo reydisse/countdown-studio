@@ -15,9 +15,20 @@ function createRoomEngine(broadcast) {
 
   // ── Settings state ──────────────────────────────────────────────────────────
   let _settings = {};
+  let _prompterCues = [];
+
+  function timerPayload() {
+    return {
+      remaining: timerState.remaining,
+      totalSeconds: timerState.total,
+      total: timerState.total,
+      running: timerState.status === 'running',
+      status: timerState.status,
+    };
+  }
 
   function emitTimer(type) {
-    broadcast(type, { ...timerState });
+    broadcast(type, timerPayload());
   }
 
   function checkCues(remaining) {
@@ -78,7 +89,14 @@ function createRoomEngine(broadcast) {
       timerState.status    = 'stopped';
       emitTimer(SERVER_EVENTS.TIMER_STATE);
     },
-    getState() { return { ...timerState }; },
+    seek(seconds) {
+      clearInterval(_interval);
+      _interval = null;
+      timerState.remaining = Math.max(0, Math.min(timerState.total, Math.floor(seconds)));
+      timerState.status    = timerState.remaining > 0 ? 'paused' : 'stopped';
+      emitTimer(SERVER_EVENTS.TIMER_STATE);
+    },
+    getState() { return timerPayload(); },
     destroy()  { clearInterval(_interval); _interval = null; },
   };
 
@@ -104,7 +122,13 @@ function createRoomEngine(broadcast) {
     merge(patch) { _settings = { ..._settings, ...patch }; },
   };
 
-  return { timer, cue, settings, prompter };
+  const prompterCues = {
+    get()           { return _prompterCues; },
+    set(cues)       { _prompterCues = cues; },
+    findById(id)    { return _prompterCues.find(c => c.id === id); },
+  };
+
+  return { timer, cue, settings, prompter, prompterCues };
 }
 
 module.exports = { createRoomEngine };

@@ -146,10 +146,20 @@ export const usePrompterStore = create((set, get) => ({
   deleteScript: async (id) => {
     const code = get().room?.code;
     if (!code) return;
+    const { readerScriptId } = get();
     await fetch(`${API}/api/rooms/${code}/scripts/${id}`, { method: 'DELETE' });
     const remaining = get().scripts.filter(s => s.id !== id);
     const next      = remaining[0] ?? null;
     set({ scripts: remaining, activeScriptId: next?.id ?? null, content: next?.content ?? '' });
+    if (readerScriptId === id) {
+      if (next) {
+        set({ readerScriptId: next.id });
+        send('prompter:script', { scriptId: next.id, content: next.content ?? '' });
+      } else {
+        set({ readerScriptId: null });
+        send('prompter:script', { scriptId: '', content: '' });
+      }
+    }
   },
 
   play:     () => send('prompter:play'),
@@ -177,9 +187,15 @@ export const usePrompterStore = create((set, get) => ({
   addCue: (label, position) => {
     const id    = `cue_${Date.now()}`;
     const color = ['#e8a838', '#34d48a', '#f5464a', '#60a5fa'][get().cues.length % 4];
-    set(state => ({ cues: [...state.cues, { id, label, position, color }] }));
+    const cues  = [...get().cues, { id, label, position, color }];
+    set({ cues });
+    send('prompter:cues', { cues });
   },
-  removeCue: (id) => set(state => ({ cues: state.cues.filter(c => c.id !== id) })),
+  removeCue: (id) => {
+    const cues = get().cues.filter(c => c.id !== id);
+    set({ cues });
+    send('prompter:cues', { cues });
+  },
   jumpToCue: (id) => {
     const cue = get().cues.find(c => c.id === id);
     if (cue) get().seekTo(cue.position);

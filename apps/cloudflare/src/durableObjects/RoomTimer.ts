@@ -21,7 +21,11 @@ export class RoomTimer {
 
   async load(): Promise<void> {
     const saved = await this.storage.get<TimerState>('timer')
-    if (saved) this.state = saved
+    if (saved) {
+      this.state = saved
+      // Keep persisted remaining aligned with wall-clock state after restart.
+      this.state.remaining = this.computeRemaining()
+    }
   }
 
   private async persist(): Promise<void> {
@@ -50,6 +54,7 @@ export class RoomTimer {
     if (this.state.running) return
     this.state.running = true
     this.state.endsAt = Date.now() + (this.state.pausedRemaining * 1000)
+    this.state.remaining = this.state.pausedRemaining
     await this.maybePersist(true)
     this.broadcast('timer:tick', this.getState())
   }
@@ -57,6 +62,7 @@ export class RoomTimer {
   async pause(): Promise<void> {
     this.state.running = false
     this.state.pausedRemaining = this.computeRemaining()
+    this.state.remaining = this.state.pausedRemaining
     this.state.endsAt = null
     await this.maybePersist(true)
     this.broadcast('timer:tick', this.getState())

@@ -1,6 +1,7 @@
 import { RoomTimer }    from './RoomTimer.js'
 import { RoomPrompter } from './RoomPrompter.js'
 import { getCuesByRoom } from '../db/queries/cues.js'
+import { getRoomByCode } from '../db/queries/rooms.js'
 import type { RoomCue, Bindings } from '../types.js'
 
 export class RoomObject implements DurableObject {
@@ -12,6 +13,8 @@ export class RoomObject implements DurableObject {
   private currentScript: { scriptId: string; content: string } | null = null
   private displaySettings: Record<string, unknown> | null = null
   private roomSettings: Record<string, unknown> | null = null
+  private roomType: 'countdown' | 'teleprompter' = 'countdown'
+  private prompterCues: Array<{ id: string; label: string; position: number; color?: string }> = []
   private heartbeatTimer: ReturnType<typeof setInterval> | null = null
   private state: DurableObjectState
   private env: Bindings
@@ -99,6 +102,22 @@ export class RoomObject implements DurableObject {
       return Response.json({ ok: true })
     }
 
+    if (path === '/broadcast' && method === 'POST') {
+      const { type, payload } = await request.json<{ type: string; payload?: unknown }>()
+      if (type) this.broadcast(type, payload ?? {})
+      return Response.json({ ok: true })
+    }
+
+    if (path.startsWith('/prompter/cue/') && method === 'POST') {
+      const cueId = path.slice('/prompter/cue/'.length)
+      const cue = this.prompterCues.find(c => c.id === cueId)
+        ?? this.cues.find(c => c.id === cueId)
+      if (!cue) return Response.json({ error: 'cue not found' }, { status: 404 })
+      const position = 'position' in cue ? Number(cue.position) : Number(cue.trigger_at)
+      await this.prompter.seekTo(position)
+      return Response.json({ ...this.prompter.getState(), cueId, scrollPosition: position })
+    }
+
     if (path === '/state') {
       await this.timer.load()
       await this.prompter.load()
@@ -126,10 +145,27 @@ export class RoomObject implements DurableObject {
         await this.timer.load()
         await this.prompter.load()
         this.cues = await getCuesByRoom(this.env.DB, code)
+        const room = await getRoomByCode(this.env.DB, code)
+        if (room) {
+          this.roomType = room.type === 'teleprompter' ? 'teleprompter' : 'countdown'
+          if (room.settings_json) {
+            try {
+              this.roomSettings = JSON.parse(room.settings_json) as Record<string, unknown>
+            } catch { /* keep existing */ }
+          }
+        }
         this.registerWithRegistry(code)
         ws.send(JSON.stringify({
           type: 'room:joined',
-          payload: { timer: this.timer.getState(), prompter: this.prompter.getState(), cues: this.cues, script: this.currentScript, display: this.displaySettings, settings: this.roomSettings },
+          payload: {
+            timer: this.timer.getState(),
+            prompter: this.prompter.getState(),
+            cues: this.cues,
+            script: this.currentScript,
+            display: this.displaySettings,
+            settings: this.roomSettings,
+            prompterCues: this.prompterCues,
+          },
         }))
         break
       }
@@ -145,6 +181,18 @@ export class RoomObject implements DurableObject {
       case 'timer:seek': {
         const { remaining = 0 } = payload as { remaining?: number }
         await this.timer.seek(Number(remaining))
+        break
+      }
+      case 'timer:seekAndPlay': {
+        const { remaining = 0 } = payload as { remaining?: number }
+        await this.timer.seek(Number(remaining))
+        await this.timer.play()
+        await this.scheduleAlarm()
+        break
+      }
+      case 'cue:fire': {
+        const { cue } = payload as { cue?: unknown }
+        if (cue) this.broadcast('cue:fired', { cue })
         break
       }
       case 'prompter:play':  await this.prompter.play();  await this.scheduleAlarm(); break
@@ -164,6 +212,14 @@ export class RoomObject implements DurableObject {
         const { scriptId, content } = payload as { scriptId: string; content: string }
         this.currentScript = { scriptId, content }
         this.broadcast('prompter:script', { scriptId, content })
+        break
+      }
+      case 'prompter:cues': {
+        const cues = payload.cues as typeof this.prompterCues
+        if (Array.isArray(cues)) {
+          this.prompterCues = cues
+          this.broadcast('prompter:cues', { cues })
+        }
         break
       }
       case 'settings:update': {
@@ -212,10 +268,19 @@ export class RoomObject implements DurableObject {
   }
 
   async scheduleAlarm(): Promise<void> {
-    const existing = await this.state.storage.getAlarm()
+    const wantsFast = this.prompter.needsTicking()
+    const interval  = wantsFast ? 50 : 1000
+    const existing  = await this.state.storage.getAlarm()
     if (!existing) {
-      const interval = this.prompter.needsTicking() ? 50 : 1000
       await this.state.storage.setAlarm(Date.now() + interval)
+      return
+    }
+    // Reschedule to 50ms when prompter needs smooth scroll while timer alarm exists.
+    if (wantsFast) {
+      const msUntil = existing - Date.now()
+      if (msUntil > 50) {
+        await this.state.storage.setAlarm(Date.now() + 50)
+      }
     }
   }
 
@@ -235,7 +300,7 @@ export class RoomObject implements DurableObject {
       const stub = this.env.REGISTRY.get(id)
       await stub.fetch(new Request('http://registry/register', {
         method: 'POST',
-        body: JSON.stringify({ roomCode, type: 'teleprompter' }),
+        body: JSON.stringify({ roomCode, type: this.roomType }),
         headers: { 'Content-Type': 'application/json' },
       }))
       // Heartbeat every 30s while sessions exist

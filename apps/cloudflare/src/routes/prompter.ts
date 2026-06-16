@@ -1,7 +1,6 @@
 import { Hono } from 'hono'
 import type { Bindings } from '../types.js'
 import { getActivePrompterRoom, listRooms, touchRoom } from '../db/queries/rooms.js'
-import { getCuesByRoom } from '../db/queries/cues.js'
 
 const prompter = new Hono<{ Bindings: Bindings }>()
 
@@ -32,7 +31,7 @@ prompter.get('/active', async (c) => {
   if (!room) return c.json({ code: null })
   const stub = doStub(c.env, room.code)
   const res  = await stub.fetch(new Request('http://do/state'))
-  const state = await res.json<{ prompter: unknown }>()
+  const state = await res.json<{ prompter: Record<string, unknown> }>()
   return c.json({ code: room.code, ...state.prompter })
 })
 
@@ -63,15 +62,8 @@ prompter.post('/active/scrub/stop',    (c) => forwardActive(c, '/prompter/scrub/
 prompter.post('/active/cue/:cueId', async (c) => {
   const room = await getActiveRoom(c)
   if (!room) return c.json({ error: 'No active teleprompter room' }, 404)
-  const cues = await getCuesByRoom(c.env.DB, room.code)
-  const cue  = cues.find(cu => cu.id === c.req.param('cueId'))
-  if (!cue) return c.json({ error: 'cue not found' }, 404)
   const stub = doStub(c.env, room.code)
-  return stub.fetch(new Request('http://do/prompter/seek', {
-    method: 'POST',
-    body: JSON.stringify({ position: cue.trigger_at }),
-    headers: { 'Content-Type': 'application/json' },
-  }))
+  return stub.fetch(new Request(`http://do/prompter/cue/${c.req.param('cueId')}`, { method: 'POST' }))
 })
 
 export default prompter

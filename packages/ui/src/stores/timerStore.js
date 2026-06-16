@@ -17,12 +17,27 @@ export const useTimerStore = create(() => ({
   total:     0,
 
   // ── Internal — called by useWebSocket on TIMER_TICK / TIMER_STATE ──────────
-  _tick: ({ remaining = 0, totalSeconds = 0, running = false }) => {
-    useTimerStore.setState({
-      remaining,
-      total: totalSeconds,
-      status: running ? 'running' : remaining > 0 ? 'paused' : 'stopped',
-    });
+  // Accepts Cloudflare shape ({ running, totalSeconds }) and local Express
+  // shape ({ status, total }).
+  _tick: (payload = {}) => {
+    const remaining = payload.remaining ?? 0;
+    const total = payload.totalSeconds ?? payload.total ?? 0;
+    const running = payload.running ?? payload.status === 'running';
+
+    let status = payload.status;
+    if (!status) {
+      if (running) {
+        status = 'running';
+      } else if (remaining <= 0) {
+        status = 'stopped';
+      } else if (total > 0 && remaining >= total) {
+        status = 'stopped';
+      } else {
+        status = 'paused';
+      }
+    }
+
+    useTimerStore.setState({ remaining, total, status });
   },
 
   // ── Controls — all routed through WS; server is the source of truth ────────

@@ -175,6 +175,7 @@ wss.on('connection', (socket, req) => {
         settings: engine.settings.get(),
         cues:     roomDb.listCues(code),
         prompter: engine.prompter.getState(),
+        prompterCues: engine.prompterCues.get(),
       });
       logger.info('Client joined room', { code, ip: clientIp });
       return;
@@ -189,8 +190,25 @@ wss.on('connection', (socket, req) => {
       case CLIENT_EVENTS.TIMER_PAUSE:   engine.timer.pause(); break;
       case CLIENT_EVENTS.TIMER_STOP:    engine.timer.stop(); engine.cue.resetFired(); break;
       case CLIENT_EVENTS.TIMER_RESET:   engine.timer.reset(); engine.cue.resetFired(); break;
-      case CLIENT_EVENTS.TIMER_SET:
-        if (typeof payload.seconds === 'number') engine.timer.setTime(payload.seconds);
+      case CLIENT_EVENTS.TIMER_SET: {
+        let seconds = payload.seconds;
+        if (typeof seconds !== 'number') {
+          const { h = 0, m = 0, s = 0 } = payload;
+          if (h !== undefined || m !== undefined || s !== undefined) {
+            seconds = Number(h) * 3600 + Number(m) * 60 + Number(s);
+          }
+        }
+        if (typeof seconds === 'number') engine.timer.setTime(seconds);
+        break;
+      }
+      case 'timer:seek':
+        if (typeof payload.remaining === 'number') engine.timer.seek(payload.remaining);
+        break;
+      case 'timer:seekAndPlay':
+        if (typeof payload.remaining === 'number') {
+          engine.timer.seek(payload.remaining);
+          engine.timer.play();
+        }
         break;
       case CLIENT_EVENTS.FIRE_CUE:
         if (payload.cue) broadcast.broadcastToRoom(roomCode, SERVER_EVENTS.CUE_FIRED, { cue: payload.cue });
@@ -211,6 +229,12 @@ wss.on('connection', (socket, req) => {
       case CLIENT_EVENTS.PROMPTER_SETTINGS:
         engine.prompter.applySettings(payload);
         broadcast.broadcastToRoomExcept(roomCode, socket, 'prompter:display', engine.prompter.getState());
+        break;
+      case 'prompter:cues':
+        if (Array.isArray(payload.cues)) {
+          engine.prompterCues.set(payload.cues);
+          broadcast.broadcastToRoomExcept(roomCode, socket, 'prompter:cues', { cues: payload.cues });
+        }
         break;
     }
   });

@@ -97,6 +97,11 @@ rooms.post('/:code/assets', async (c) => {
     id, roomCode: code, name: file.name, type: assetType as 'image'|'video'|'audio',
     url, size: file.size,
   })
+  await doStub(c.env, code).fetch(new Request('http://do/broadcast', {
+    method: 'POST',
+    body: JSON.stringify({ type: 'asset:added', payload: { asset } }),
+    headers: { 'Content-Type': 'application/json' },
+  }))
   return c.json(asset, 201)
 })
 
@@ -106,6 +111,11 @@ rooms.delete('/:code/assets/:id', async (c) => {
   if (!asset || asset.room_code !== code) return c.json({ error: 'asset not found' }, 404)
   await deleteFromR2(c.env.MEDIA, asset.url, c.env.MEDIA_PUBLIC_URL)
   await deleteAsset(c.env.DB, id)
+  await doStub(c.env, code).fetch(new Request('http://do/broadcast', {
+    method: 'POST',
+    body: JSON.stringify({ type: 'asset:removed', payload: { id } }),
+    headers: { 'Content-Type': 'application/json' },
+  }))
   return new Response(null, { status: 204 })
 })
 
@@ -215,5 +225,9 @@ rooms.post('/:code/prompter/seek',       async (c) => forwardToDO(c.env, c.req.p
 rooms.post('/:code/prompter/seek/relative', async (c) => forwardToDO(c.env, c.req.param('code'), '/prompter/seek/relative', 'POST', await c.req.json()))
 rooms.post('/:code/prompter/scrub/start', async (c) => forwardToDO(c.env, c.req.param('code'), '/prompter/scrub/start', 'POST', await c.req.json()))
 rooms.post('/:code/prompter/scrub/stop',  async (c) => forwardToDO(c.env, c.req.param('code'), '/prompter/scrub/stop'))
+rooms.post('/:code/prompter/cue/:cueId', async (c) => {
+  const { code, cueId } = c.req.param()
+  return forwardToDO(c.env, code, `/prompter/cue/${cueId}`)
+})
 
 export default rooms

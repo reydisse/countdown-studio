@@ -48,6 +48,7 @@ export function usePrompterWS() {
             store.setJoined({ joined: true, prompter: payload.prompter });
             if (payload.script) store._applyScript(payload.script);
             if (payload.display) store._applyDisplay(payload.display);
+            if (Array.isArray(payload.prompterCues)) usePrompterStore.setState({ cues: payload.prompterCues });
             break;
           case 'room:not_found':
             store.leaveRoom();
@@ -61,13 +62,16 @@ export function usePrompterWS() {
           case 'prompter:script':
             store._applyScript(payload);
             break;
+          case 'prompter:cues':
+            if (Array.isArray(payload.cues)) usePrompterStore.setState({ cues: payload.cues });
+            break;
         }
       };
 
       ws.onclose = () => {
         if (!aliveRef.current) return;
         _setSend(() => {});
-        usePrompterStore.setState({ wsConnected: false, joined: false });
+        usePrompterStore.setState({ wsConnected: false });
         const delay = backoffRef.current;
         backoffRef.current = Math.min(delay * 2, MAX_DELAY);
         timerRef.current = setTimeout(connect, delay);

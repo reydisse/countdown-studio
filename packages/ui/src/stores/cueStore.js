@@ -282,8 +282,7 @@ export const useCueStore = create((set, get) => ({
     scrubBaseline = null; // discard — preview state becomes the live state
     useSettingsStore.setState({ _previewRemaining: null });
     set({ scrubAt: null });
-    useTimerStore.setState({ remaining: at }); // optimistic; server tick confirms
-    useTimerStore.getState().seek(at);
-    useTimerStore.getState().play();
+    useTimerStore.setState({ remaining: at, status: 'running' }); // optimistic; server tick confirms
+    send('timer:seekAndPlay', { remaining: at });
   },
 }));

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { useCueStore }   from '../../stores/cueStore.js';
+import { normalizeCueActions, useCueStore } from '../../stores/cueStore.js';
 import { useRoomStore }  from '../../stores/roomStore.js';
 import {
   getRoomCues, createRoomCue, updateRoomCue, deleteRoomCue,
@@ -30,7 +30,7 @@ export function PlanView({ slideshowRef }) {
         // Parse actions_json → actions (DB field vs client field)
         storeSetCues(list.map(c => ({
           ...c,
-          actions: (() => { try { return JSON.parse(c.actions_json ?? '[]') } catch { return [] } })(),
+          actions: normalizeCueActions(c.actions ?? c.actions_json),
         })));
       } catch (err) {
         console.error('PlanView init:', err);
@@ -48,7 +48,7 @@ export function PlanView({ slideshowRef }) {
       actions:    [],
     });
     // Parse actions_json → actions from the API response
-    const parsed = { ...cue, actions: (() => { try { return JSON.parse(cue.actions_json ?? '[]') } catch { return [] } })() };
+    const parsed = { ...cue, actions: normalizeCueActions(cue.actions ?? cue.actions_json) };
     useCueStore.getState().add(parsed);
     setSelectedCue(parsed);
   }, [roomCode]);
@@ -81,7 +81,7 @@ export function PlanView({ slideshowRef }) {
         const list = await getRoomCues(roomCode);
         useCueStore.getState().setCues(list.map(c => ({
           ...c,
-          actions: (() => { try { return JSON.parse(c.actions_json ?? '[]') } catch { return [] } })(),
+          actions: normalizeCueActions(c.actions ?? c.actions_json),
         })));
       } catch { /* ignore */ }
     }

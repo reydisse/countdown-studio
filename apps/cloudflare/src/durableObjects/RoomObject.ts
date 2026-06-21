@@ -150,7 +150,10 @@ export class RoomObject implements DurableObject {
           this.roomType = room.type === 'teleprompter' ? 'teleprompter' : 'countdown'
           if (room.settings_json) {
             try {
-              this.roomSettings = JSON.parse(room.settings_json) as Record<string, unknown>
+              const parsed = JSON.parse(room.settings_json)
+              if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+                this.roomSettings = parsed as Record<string, unknown>
+              }
             } catch { /* keep existing */ }
           }
         }

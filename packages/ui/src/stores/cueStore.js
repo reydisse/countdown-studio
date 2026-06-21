@@ -7,6 +7,16 @@ import { useTimerStore }    from './timerStore.js';
 const LOAD_PROJECT = 'project:load';
 const FIRE_CUE     = 'cue:fire';
 
+export function normalizeCueActions(value) {
+  let parsed = value;
+  if (typeof parsed === 'string') {
+    try { parsed = JSON.parse(parsed || '[]'); } catch { parsed = []; }
+  }
+  if (Array.isArray(parsed)) return parsed.filter(Boolean);
+  if (parsed && typeof parsed === 'object') return [parsed];
+  return [];
+}
+
 // ── Action dispatcher ────────────────────────────────────────────────────────
 // Interprets the actions_json array on a fired cue and fans out to the
 // appropriate store or browser API. Add new action types here as needed.
@@ -234,7 +244,7 @@ export const useCueStore = create((set, get) => ({
   executeCueActions: (cue) => {
     // Never let a live cue clobber the preview while scrubbing
     if (get().scrubAt !== null) return;
-    for (const action of cue.actions ?? []) {
+    for (const action of normalizeCueActions(cue.actions ?? cue.actions_json)) {
       dispatchCueAction(action);
     }
   },
@@ -260,7 +270,7 @@ export const useCueStore = create((set, get) => ({
       .filter(c => c.trigger_at >= remaining)
       .sort((a, b) => b.trigger_at - a.trigger_at);
     for (const cue of fired) {
-      for (const action of cue.actions ?? []) applyActionForPreview(action);
+      for (const action of normalizeCueActions(cue.actions ?? cue.actions_json)) applyActionForPreview(action);
     }
     set({ scrubAt: remaining });
   },

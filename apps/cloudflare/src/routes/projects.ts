@@ -21,15 +21,30 @@ async function reloadCues(env: Bindings, code: string): Promise<void> {
 }
 
 function roomToProject(room: { id: string; code: string; name: string; settings_json?: string; type: string; is_permanent?: number; [k: string]: unknown }) {
-  const settings = (() => { try { return JSON.parse(room.settings_json as string ?? '{}') } catch { return {} } })()
+  const settings = (() => {
+    try {
+      const parsed = JSON.parse(room.settings_json as string ?? '{}')
+      return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {}
+    } catch { return {} }
+  })()
   return { id: room.id, code: room.code, name: room.name, type: room.type, settings, is_permanent: room.is_permanent ?? 0 }
 }
 
 function parseCue(row: { id: string; room_code: string; trigger_at: number; label: string; actions_json: string; order_index: number; created_at: number }) {
   return {
     ...row,
-    actions: (() => { try { return JSON.parse(row.actions_json ?? '[]') } catch { return [] } })(),
+    actions: parseActions(row.actions_json),
   }
+}
+
+function parseActions(value: unknown): unknown[] {
+  let parsed = value
+  if (typeof parsed === 'string') {
+    try { parsed = JSON.parse(parsed || '[]') } catch { parsed = [] }
+  }
+  if (Array.isArray(parsed)) return parsed
+  if (parsed && typeof parsed === 'object') return [parsed]
+  return []
 }
 
 // ── Project CRUD ───────────────────────────────────────────────────────────────

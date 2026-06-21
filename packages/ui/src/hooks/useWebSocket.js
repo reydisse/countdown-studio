@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { _setSend, send } from '../wsClient.js';
 import { useTimerStore }    from '../stores/timerStore.js';
-import { useCueStore }      from '../stores/cueStore.js';
+import { normalizeCueActions, useCueStore } from '../stores/cueStore.js';
 import { useMediaStore }    from '../stores/mediaStore.js';
 import { useSettingsStore } from '../stores/settingsStore.js';
 import { useRoomStore }     from '../stores/roomStore.js';
@@ -88,7 +88,7 @@ export function useWebSocket() {
             useCueStore.getState().setCues(
               (payload.cues ?? []).map(c => ({
                 ...c,
-                actions: (() => { try { return JSON.parse(c.actions_json ?? '[]') } catch { return [] } })(),
+                actions: normalizeCueActions(c.actions ?? c.actions_json),
               }))
             );
             break;
@@ -104,7 +104,7 @@ export function useWebSocket() {
             // Guard: if actions is missing/string, parse actions_json as a fallback.
             const firedCue = payload.cue ?? payload;
             if (!Array.isArray(firedCue.actions)) {
-              try { firedCue.actions = JSON.parse(firedCue.actions_json ?? firedCue.actions ?? '[]') } catch { firedCue.actions = [] }
+              firedCue.actions = normalizeCueActions(firedCue.actions ?? firedCue.actions_json);
             }
             useCueStore.getState().executeCueActions(firedCue);
             break;

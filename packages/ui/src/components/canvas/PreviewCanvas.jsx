@@ -17,7 +17,7 @@ import { ScrimLayer }       from './ScrimLayer.jsx';
 // Wraps only background layers (not timer/overlay/logo) so ZOOM_IN creates a
 // dynamic shot on the image/video while the timer stays sharp and unscaled.
 // Uses Web Animations API — no CSS @keyframes, no stylesheet timing race.
-function BgZoom({ children }) {
+export function BgZoom({ children }) {
   const _zoomCount    = useSettingsStore(s => s._zoomCount);
   const _zoomScale    = useSettingsStore(s => s._zoomScale    ?? 1.8);
   const _zoomDuration = useSettingsStore(s => s._zoomDuration ?? 2000);

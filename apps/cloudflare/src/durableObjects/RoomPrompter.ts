@@ -27,8 +27,15 @@ export class RoomPrompter {
   ) {}
 
   async load(): Promise<void> {
-    const saved = await this.storage.get<PrompterState>('prompter')
-    if (saved) this.state = saved
+    const saved = await this.storage.get<Partial<PrompterState>>('prompter')
+    if (saved) {
+      this.state = {
+        scrollPosition: numberOr(saved.scrollPosition, 0),
+        totalHeight: numberOr(saved.totalHeight, 0),
+        isPlaying: saved.isPlaying === true,
+        speed: Math.max(1, Math.min(10, Math.round(numberOr(saved.speed, 3)))),
+      }
+    }
   }
 
   private async persist(): Promise<void> {
@@ -155,4 +162,9 @@ export class RoomPrompter {
   needsTicking(): boolean {
     return this.state.isPlaying || this.scrubDirection !== null
   }
+}
+
+function numberOr(value: unknown, fallback: number): number {
+  const n = Number(value)
+  return Number.isFinite(n) ? n : fallback
 }

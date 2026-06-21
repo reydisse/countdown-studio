@@ -16,6 +16,7 @@ import { LogoLayer }       from './LogoLayer.jsx';
 import { CountdownDisplay } from './CountdownDisplay.jsx';
 import { SlideDots }       from './SlideDots.jsx';
 import { ScrimLayer }      from './ScrimLayer.jsx';
+import { BgZoom }          from './PreviewCanvas.jsx';
 
 function OutputCanvas() {
   useWebSocket();
@@ -31,10 +32,12 @@ function OutputCanvas() {
         containerType: 'size',
       }}
     >
-      <BgLayer />
-      <VideoLayer />
-      <SlideshowLayer ref={slideshowRef} />
-      <ImageLayer />
+      <BgZoom>
+        <BgLayer />
+        <VideoLayer />
+        <SlideshowLayer ref={slideshowRef} />
+        <ImageLayer />
+      </BgZoom>
       <OverlayLayer />
       <FlashLayer />
       <VignetteLayer />

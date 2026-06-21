@@ -20,9 +20,22 @@ export class RoomTimer {
   ) {}
 
   async load(): Promise<void> {
-    const saved = await this.storage.get<TimerState>('timer')
+    const saved = await this.storage.get<Partial<TimerState> & {
+      total?: number
+      status?: string
+    }>('timer')
     if (saved) {
-      this.state = saved
+      const remaining = numberOr(saved.remaining, numberOr(saved.pausedRemaining, 0))
+      const totalSeconds = numberOr(saved.totalSeconds, numberOr(saved.total, remaining))
+      const endsAt = typeof saved.endsAt === 'number' ? saved.endsAt : null
+      const running = (typeof saved.running === 'boolean' ? saved.running : saved.status === 'running') && endsAt !== null
+      this.state = {
+        remaining,
+        totalSeconds,
+        running,
+        endsAt,
+        pausedRemaining: numberOr(saved.pausedRemaining, running ? remaining : remaining || totalSeconds),
+      }
       // Keep persisted remaining aligned with wall-clock state after restart.
       this.state.remaining = this.computeRemaining()
     }
@@ -120,8 +133,7 @@ export class RoomTimer {
           if (cue.trigger_at === sec) {
             // Parse actions_json into an array so the client's executeCueActions can iterate it.
             // cues are raw DB rows (actions_json = string); we must parse here before broadcast.
-            let actions: unknown[]
-            try { actions = JSON.parse(cue.actions_json ?? '[]') } catch { actions = [] }
+            const actions = parseActions(cue.actions_json)
             this.broadcast('cue:fired', {
               cue: { ...cue, actions },
             })
@@ -148,4 +160,19 @@ export class RoomTimer {
   needsTicking(): boolean {
     return this.state.running
   }
+}
+
+function numberOr(value: unknown, fallback: number): number {
+  const n = Number(value)
+  return Number.isFinite(n) ? n : fallback
+}
+
+function parseActions(value: unknown): unknown[] {
+  let parsed = value
+  if (typeof parsed === 'string') {
+    try { parsed = JSON.parse(parsed || '[]') } catch { parsed = [] }
+  }
+  if (Array.isArray(parsed)) return parsed
+  if (parsed && typeof parsed === 'object') return [parsed]
+  return []
 }

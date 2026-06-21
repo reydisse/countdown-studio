@@ -98,6 +98,7 @@ export const useSettingsStore = create((set, get) => ({
   // Applies only the known settings fields — ignores the resolved URL fields
   // (bgAssetUrl, slideshowUrls, etc.) that AppShell adds for the output page.
   applyFromServer: (payload) => {
+    if (!payload || typeof payload !== 'object' || Array.isArray(payload)) return;
     const known = Object.fromEntries(
       Object.entries(payload).filter(([k]) => k in DEFAULTS && !k.startsWith('_'))
     );
@@ -105,7 +106,7 @@ export const useSettingsStore = create((set, get) => ({
   },
 
   loadFromProject: (project) => {
-    if (!project.settings) return;
+    if (!project.settings || typeof project.settings !== 'object' || Array.isArray(project.settings)) return;
     set({ ...DEFAULTS, ...project.settings });
   },
 
